@@ -1,0 +1,31 @@
+﻿from rest_framework import serializers
+from ..models import Product, ProductImage, ProductColor, Order, CustomUser
+
+
+class AdminProductCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        exclude = ['created_at', 'updated_at']
+
+
+class AdminOrderStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Order.Status.choices)
+
+
+class AdminDashboardSerializer(serializers.Serializer):
+    total_orders = serializers.IntegerField()
+    today_orders = serializers.IntegerField()
+    pending_orders = serializers.IntegerField()
+    total_products = serializers.IntegerField()
+    total_customers = serializers.IntegerField()
+    monthly_revenue = serializers.DecimalField(max_digits=20, decimal_places=2)
+    order_by_status = serializers.DictField()
+
+
+class AdminCustomerSerializer(serializers.ModelSerializer):
+    orders_count = serializers.IntegerField(read_only=True)
+    total_spent = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'phone_number', 'full_name', 'is_active', 'created_at', 'orders_count', 'total_spent']
