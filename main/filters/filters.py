@@ -1,4 +1,5 @@
 ﻿import django_filters
+from django.db.models import Q
 from ..models import Product, Order
 
 
@@ -21,7 +22,17 @@ class OrderFilter(django_filters.FilterSet):
     status = django_filters.CharFilter(field_name="status", lookup_expr="exact")
     date_from = django_filters.DateTimeFilter(field_name="created_at", lookup_expr="gte")
     date_to = django_filters.DateTimeFilter(field_name="created_at", lookup_expr="lte")
+    search = django_filters.CharFilter(method="filter_search")
 
     class Meta:
         model = Order
         fields = ["status"]
+
+    def filter_search(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(order_number__icontains=value)
+            | Q(user__full_name__icontains=value)
+            | Q(user__phone_number__icontains=value)
+        )

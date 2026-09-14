@@ -1,5 +1,7 @@
-﻿from datetime import date
+﻿from datetime import date, timedelta
+from io import BytesIO
 from django.db.models import Count, Sum, Q
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -63,18 +65,94 @@ def admin_dashboard(request):
     total_customers = CustomUser.objects.filter(role="client").count()
 
     from django.utils.timezone import now
-    current_month = now()
+    now_tz = now()
+    month_start = now_tz.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_month_end = month_start - timedelta(seconds=1)
+    prev_month_start = prev_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    revenue_statuses = [Order.Status.DELIVERED, Order.Status.SHIPPED, Order.Status.PROCESSING]
+
     monthly_revenue = Order.objects.filter(
-        created_at__year=current_month.year,
-        created_at__month=current_month.month,
-        status__in=[Order.Status.DELIVERED, Order.Status.SHIPPED, Order.Status.PROCESSING],
+        created_at__gte=month_start,
+        status__in=revenue_statuses,
     ).aggregate(total=Sum("total_amount"))["total"] or 0
 
+    # ── Oylik o'zgarishlar (foiz) ──
+    def _pct(curr, prev):
+        if prev == 0:
+            return 100 if curr > 0 else 0
+        return round(((curr - prev) / prev) * 100, 1)
+
+    last_month_order_count = Order.objects.filter(
+        created_at__gte=prev_month_start, created_at__lt=month_start
+    ).count()
+    prev_month_revenue = Order.objects.filter(
+        created_at__gte=prev_month_start,
+        created_at__lt=month_start,
+        status__in=revenue_statuses,
+    ).aggregate(total=Sum("total_amount"))["total"] or 0
+    this_month_customers = CustomUser.objects.filter(
+        role="client", created_at__gte=month_start
+    ).count()
+    last_month_customers = CustomUser.objects.filter(
+        role="client", created_at__gte=prev_month_start, created_at__lt=month_start
+    ).count()
+    this_month_products = Product.objects.filter(
+        created_at__gte=month_start, is_active=True
+    ).count()
+    last_month_products = Product.objects.filter(
+        created_at__gte=prev_month_start, created_at__lt=month_start, is_active=True
+    ).count()
+
+    changes = {
+        "total_orders": _pct(total_orders, last_month_order_count),
+        "monthly_revenue": _pct(float(monthly_revenue), float(prev_month_revenue)),
+        "total_customers": _pct(this_month_customers, last_month_customers),
+        "total_products": _pct(this_month_products, last_month_products),
+    }
+
+    # ── Sales chart (period: month | week) ──
+    period = request.GET.get("period", "month")
+    from django.db.models.functions import TruncMonth, TruncWeek
+
+    if period == "week":
+        since = now_tz - timedelta(weeks=12)
+        rows = (
+            Order.objects.filter(
+                status__in=revenue_statuses, created_at__gte=since
+            )
+            .annotate(period_start=TruncWeek("created_at"))
+            .values("period_start")
+            .annotate(revenue=Sum("total_amount"))
+            .order_by("period_start")
+        )
+        sales_chart_data = [
+            {"label": r["period_start"].strftime("%Y-%m-%d"), "revenue": r["revenue"] or 0}
+            for r in rows
+        ]
+    else:
+        since = now_tz - timedelta(days=183)
+        rows = (
+            Order.objects.filter(
+                status__in=revenue_statuses, created_at__gte=since
+            )
+            .annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(revenue=Sum("total_amount"))
+            .order_by("month")
+        )
+        sales_chart_data = [
+            {"month": r["month"].strftime("%Y-%m"), "revenue": r["revenue"] or 0}
+            for r in rows
+        ]
+
+    # ── Status bo'yicha taqsimot ──
     order_by_status = {}
     for status_val, status_label in Order.Status.choices:
         count = Order.objects.filter(status=status_val).count()
         order_by_status[status_val] = {"label": status_label, "count": count}
 
+    # ── Top mahsulotlar ──
     top_products = (
         OrderItem.objects.values("product__name", "product__id")
         .annotate(total_qty=Sum("quantity"), total_revenue=Sum("total_price"))
@@ -90,6 +168,8 @@ def admin_dashboard(request):
         "monthly_revenue": monthly_revenue,
         "order_by_status": order_by_status,
         "top_products": list(top_products),
+        "sales_chart": sales_chart_data,
+        "changes": changes,
     })
 
 
@@ -267,6 +347,42 @@ def admin_product_delete_image(request, product_id, image_id):
         return Response({"error": "Rasm topilmadi"}, status=status.HTTP_404_NOT_FOUND)
     img.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    tags=["🛡️ Admin"],
+    summary="[Admin] Asosiy rasmni belgilash",
+    description="""
+Bitta rasmni mahsulotning asosiy rasmi sifatida belgilash.
+
+Oldingi asosiy rasm avtomatik asosiy bo'lmay qoladi. Faqat bitta asosiy rasm bo'lishi mumkin.
+
+**Header:** Authorization: Token <admin_token>  
+**Ruxsat:** Faqat admin
+    """,
+    responses={
+        200: OpenApiResponse(description="Asosiy rasm o'rnatildi"),
+        404: OpenApiResponse(description="Rasm topilmadi"),
+    },
+)
+@api_view(["PUT", "PATCH"])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def admin_product_set_main_image(request, product_id, image_id):
+    """Admin: rasmni asosiy qilib belgilash"""
+    try:
+        img = ProductImage.objects.get(id=image_id, product_id=product_id)
+    except ProductImage.DoesNotExist:
+        return Response({"error": "Rasm topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+    img.product.images.filter(is_main=True).exclude(id=img.id).update(is_main=False)
+    img.is_main = True
+    img.save(update_fields=["is_main"])
+    return Response({
+        "id": img.id,
+        "image": request.build_absolute_uri(img.image.url),
+        "is_main": True,
+        "message": "Asosiy rasm o'rnatildi",
+    })
 
 
 @extend_schema(
@@ -470,7 +586,7 @@ def admin_customers_list(request):
             "orders__total_amount",
             filter=Q(orders__status=Order.Status.DELIVERED),
         ),
-    ).order_by("-created_at")
+).order_by("-created_at")
 
     search = request.GET.get("search")
     if search:
@@ -483,3 +599,223 @@ def admin_customers_list(request):
     page = paginator.paginate_queryset(qs, request)
     serializer = AdminCustomerSerializer(page, many=True)
     return paginator.get_paginated_response(serializer.data)
+
+
+# ─────────────────────────────────────────
+# Hisobotlar
+# ─────────────────────────────────────────
+def _filter_orders_by_date(qs, request):
+    date_from = request.GET.get("date_from")
+    date_to = request.GET.get("date_to")
+    if date_from:
+        qs = qs.filter(created_at__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(created_at__date__lte=date_to)
+    return qs
+
+
+@extend_schema(
+    tags=["🛡️ Admin"],
+    summary="[Admin] Hisobot statistikasi",
+    description="""
+Tanlangan sana oralig'i bo'yicha hisobot statistikasi.
+
+**Filtr parametrlari:**
+- date_from — Boshlanish sanasi (YYYY-MM-DD)
+- date_to — Tugash sanasi (YYYY-MM-DD)
+
+**Qaytariladigan ma'lumotlar:**
+- total_orders — Jami buyurtmalar soni
+- total_revenue — Jami tushum
+- avg_order_value — O'rtacha buyurtma qiymati
+- orders_by_status — Holat bo'yicha taqsimot
+- top_products — Eng ko'p sotilgan mahsulotlar
+- recent_orders — So'nggi 50 ta buyurtma
+
+**Header:** Authorization: Token <admin_token>  
+**Ruxsat:** Faqat admin
+    """,
+    parameters=[
+        OpenApiParameter("date_from", OpenApiTypes.DATE, description="Boshlanish sanasi"),
+        OpenApiParameter("date_to", OpenApiTypes.DATE, description="Tugash sanasi"),
+    ],
+    responses={200: OpenApiResponse(description="Hisobot statistikasi")},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def admin_reports_list(request):
+    """Admin: sana oralig'i bo'yicha hisobot"""
+    qs = _filter_orders_by_date(Order.objects.all(), request)
+
+    total_orders = qs.count()
+    total_revenue = qs.aggregate(total=Sum("total_amount"))["total"] or 0
+    avg_order_value = float(total_revenue) / total_orders if total_orders else 0
+
+    orders_by_status = {}
+    for status_val, status_label in Order.Status.choices:
+        count = qs.filter(status=status_val).count()
+        orders_by_status[status_val] = {"label": status_label, "count": count}
+
+    top_products = (
+        OrderItem.objects.filter(order__in=qs)
+        .values("product__name", "product__id")
+        .annotate(total_qty=Sum("quantity"), total_revenue=Sum("total_price"))
+        .order_by("-total_qty")[:5]
+    )
+
+    recent = qs.select_related("user", "delivery_address").prefetch_related("items")[:50]
+
+    return Response({
+        "total_orders": total_orders,
+        "total_revenue": total_revenue,
+        "avg_order_value": round(avg_order_value, 2),
+        "orders_by_status": orders_by_status,
+        "top_products": list(top_products),
+        "recent_orders": OrderSerializer(recent, many=True, context={"request": request}).data,
+    })
+
+
+def _build_excel_export(qs, status_counts):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Hisobot"
+
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_fill = PatternFill(start_color="2F80ED", end_color="2F80ED", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin", color="D1D5DB"),
+        right=Side(style="thin", color="D1D5DB"),
+        top=Side(style="thin", color="D1D5DB"),
+        bottom=Side(style="thin", color="D1D5DB"),
+    )
+
+    ws.merge_cells("A1:F1")
+    ws["A1"] = "SARAMAX — Sotuv hisoboti"
+    ws["A1"].font = Font(bold=True, size=16, color="1F2937")
+    ws["A1"].alignment = Alignment(horizontal="center")
+    ws.merge_cells("A2:F2")
+    ws["A2"] = "Yaratilgan sana: " + date.today().strftime("%d.%m.%Y")
+    ws["A2"].alignment = Alignment(horizontal="center")
+
+    headers = ["Buyurtma #", "Mijoz", "Telefon", "Summa (so'm)", "Holat", "Sana"]
+    ws.append([])
+    ws.append(headers)
+    for cell in ws[3]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal="center")
+
+    row = 4
+    for order in qs:
+        ism = order.user.full_name if order.user else "—"
+        telefon = order.user.phone_number if order.user else "—"
+        ws.append([
+            order.order_number,
+            ism,
+            telefon,
+            float(order.total_amount),
+            order.get_status_display(),
+            order.created_at.strftime("%d.%m.%Y %H:%M"),
+        ])
+        for cell in ws[row]:
+            cell.border = thin_border
+        ws.cell(row=row, column=4).number_format = "#,##0"
+        row += 1
+
+    total_row = row + 1
+    ws.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=3)
+    ws.cell(row=total_row, column=1, value="JAMI")
+    ws.cell(row=total_row, column=1).font = Font(bold=True, size=12)
+    ws.cell(row=total_row, column=4, value=float(qs.aggregate(t=Sum("total_amount"))["t"] or 0))
+    ws.cell(row=total_row, column=4).font = Font(bold=True, size=12)
+    ws.cell(row=total_row, column=4).number_format = "#,##0"
+
+    ws.column_dimensions["A"].width = 14
+    ws.column_dimensions["B"].width = 28
+    ws.column_dimensions["C"].width = 20
+    ws.column_dimensions["D"].width = 18
+    ws.column_dimensions["E"].width = 18
+    ws.column_dimensions["F"].width = 20
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+
+def _build_word_export(qs):
+    html_rows = "".join(
+        f"<tr>"
+        f"<td>{o.order_number}</td>"
+        f"<td>{o.user.full_name if o.user else '—'}</td>"
+        f"<td>{o.user.phone_number if o.user else '—'}</td>"
+        f"<td align='right'>{float(o.total_amount):,.0f}</td>"
+        f"<td>{o.get_status_display()}</td>"
+        f"<td>{o.created_at.strftime('%d.%m.%Y')}</td>"
+        f"</tr>"
+        for o in qs
+    )
+    total = qs.aggregate(t=Sum("total_amount"))["t"] or 0
+    html = f"""<html><head><meta charset="utf-8"></head><body>
+    <h2 style="text-align:center">SARAMAX — Sotuv hisoboti</h2>
+    <p style="text-align:center">Yaratilgan sana: {date.today().strftime('%d.%m.%Y')}</p>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+    <tr style="background:#2F80ED;color:#fff">
+      <th>Buyurtma #</th><th>Mijoz</th><th>Telefon</th><th>Summa (so'm)</th><th>Holat</th><th>Sana</th>
+    </tr>{html_rows}
+    <tr><td colspan="3"><b>JAMI</b></td><td align="right"><b>{float(total):,.0f}</b></td><td colspan="2"></td></tr>
+    </table></body></html>"""
+    buf = BytesIO()
+    buf.write(html.encode("utf-8"))
+    buf.seek(0)
+    return buf
+
+
+@extend_schema(
+    tags=["🛡️ Admin"],
+    summary="[Admin] Hisobotni export qilish",
+    description="""
+Hisobotni Excel (.xlsx) yoki Word (.doc) formatida yuklab olish.
+
+**Parametrlar:**
+- date_from — Boshlanish sanasi (YYYY-MM-DD)
+- date_to — Tugash sanasi (YYYY-MM-DD)
+- format — `excel` yoki `word` (default: excel)
+
+**Header:** Authorization: Token <admin_token>  
+**Ruxsat:** Faqat admin
+    """,
+    parameters=[
+        OpenApiParameter("date_from", OpenApiTypes.DATE, description="Boshlanish sanasi"),
+        OpenApiParameter("date_to", OpenApiTypes.DATE, description="Tugash sanasi"),
+        OpenApiParameter("format", OpenApiTypes.STR, description="excel | word"),
+    ],
+    responses={200: OpenApiResponse(description="Fayl yuklanadi")},
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def admin_reports_export(request):
+    """Admin: hisobotni Excel/Word formatida eksport qilish"""
+    qs = _filter_orders_by_date(Order.objects.select_related("user"), request)
+
+    fmt = request.GET.get("format", "excel")
+    if fmt == "word":
+        buf = _build_word_export(qs)
+        response = HttpResponse(
+            buf.read(),
+            content_type="application/msword",
+        )
+        response["Content-Disposition"] = f'attachment; filename="saramax_hisobot.doc"'
+    else:
+        buf = _build_excel_export(qs, {})
+        response = HttpResponse(
+            buf.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="saramax_hisobot.xlsx"'
+
+    return response

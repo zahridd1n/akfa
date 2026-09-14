@@ -45,6 +45,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     colors = ProductColorSerializer(many=True, read_only=True)
     material_display = serializers.CharField(source='get_material_display', read_only=True)
@@ -56,14 +57,15 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'name', 'slug',
-            'category', 'description',
+            'category', 'category_name',
+            'description',
             'material', 'material_display',
             'design_style', 'design_style_display',
             'base_price', 'price_type', 'price_type_display',
             'badge', 'status', 'status_display',
             'profile_thickness', 'max_glass', 'sound_insulation',
             'climate_resistance', 'delivery_info',
-            'images', 'colors',
+            'is_active', 'images', 'colors',
             'created_at', 'updated_at',
         ]
 

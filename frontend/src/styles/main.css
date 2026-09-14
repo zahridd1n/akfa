@@ -1,0 +1,261 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* --- Google Fonts --- */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   SARAMAX — Global Styles & Design System
+   ============================================================ */
+
+/* --- CSS Custom Properties --- */
+:root {
+  --brand-primary: #2563EB;
+  --brand-dark: #0F172A;
+  --brand-accent: #F59E0B;
+  --surface-1: #FFFFFF;
+  --surface-2: #F8FAFC;
+  --surface-3: #F1F5F9;
+  --border: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-hover: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  --transition: 0.2s ease;
+}
+
+/* --- Base Reset & Typography --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--surface-1);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Scrollbar Styling --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface-2);
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* --- Component Layer --- */
+@layer components {
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none;
+  }
+  .btn-sm { @apply btn px-4 py-2 text-sm; }
+  .btn-md { @apply btn px-5 py-2.5 text-sm; }
+  .btn-lg { @apply btn px-6 py-3 text-base; }
+  .btn-xl { @apply btn px-8 py-4 text-lg; }
+
+  .btn-primary {
+    @apply bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700 focus:ring-brand-500 shadow-sm hover:shadow-glow;
+  }
+  .btn-secondary {
+    @apply bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 focus:ring-slate-400;
+  }
+  .btn-outline {
+    @apply border-2 border-brand-500 text-brand-500 hover:bg-brand-50 active:bg-brand-100 focus:ring-brand-500;
+  }
+  .btn-white {
+    @apply bg-white text-slate-800 hover:bg-slate-50 active:bg-slate-100 focus:ring-slate-300 shadow-md hover:shadow-lg;
+  }
+  .btn-accent {
+    @apply bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700 focus:ring-accent-400 shadow-sm;
+  }
+  .btn-ghost {
+    @apply text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200 focus:ring-slate-300;
+  }
+  .btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-400;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden;
+  }
+  .card-hover {
+    @apply card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 cursor-pointer;
+  }
+
+  /* Form Inputs */
+  .form-input {
+    @apply w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500
+           transition-all duration-200 text-sm;
+  }
+  .form-input-error {
+    @apply form-input border-red-400 focus:ring-red-400 focus:border-red-400;
+  }
+  .form-label {
+    @apply block text-sm font-medium text-slate-700 mb-1.5;
+  }
+  .form-error {
+    @apply text-xs text-red-500 mt-1.5 flex items-center gap-1;
+  }
+  .form-select {
+    @apply form-input appearance-none cursor-pointer;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-blue    { @apply badge bg-blue-100 text-blue-700; }
+  .badge-green   { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-amber   { @apply badge bg-amber-100 text-amber-700; }
+  .badge-red     { @apply badge bg-red-100 text-red-700; }
+  .badge-slate   { @apply badge bg-slate-100 text-slate-600; }
+  .badge-purple  { @apply badge bg-purple-100 text-purple-700; }
+  .badge-new     { @apply badge bg-brand-500 text-white; }
+  .badge-hot     { @apply badge bg-red-500 text-white; }
+  .badge-sale    { @apply badge bg-accent-500 text-white; }
+
+  /* Section */
+  .section { @apply py-16 md:py-20; }
+  .section-title {
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 leading-tight;
+  }
+  .section-subtitle {
+    @apply text-slate-500 text-base md:text-lg mt-3 max-w-2xl;
+  }
+
+  /* Container */
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Divider */
+  .divider { @apply border-t border-slate-100; }
+
+  /* Skeleton */
+  .skeleton { @apply bg-slate-200 rounded-xl animate-pulse; }
+
+  /* Loading spinner */
+  .spinner {
+    @apply inline-block w-5 h-5 border-2 border-slate-200 border-t-brand-500 rounded-full animate-spin;
+  }
+  .spinner-lg { @apply inline-block w-10 h-10 border-4 border-slate-200 border-t-brand-500 rounded-full animate-spin; }
+
+  /* Toast variants */
+  .toast-success { @apply bg-emerald-600 text-white; }
+  .toast-error   { @apply bg-red-600 text-white; }
+  .toast-info    { @apply bg-brand-500 text-white; }
+  .toast-warning { @apply bg-amber-500 text-white; }
+}
+
+/* --- Admin Sidebar --- */
+.admin-sidebar-link {
+  @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 transition-all duration-200 text-sm font-medium;
+}
+.admin-sidebar-link.active {
+  @apply text-white bg-brand-600;
+}
+
+/* --- Quantity Input --- */
+.qty-btn {
+  @apply w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700
+         hover:bg-brand-500 hover:text-white hover:border-brand-500 transition-all duration-200 text-lg font-bold cursor-pointer;
+}
+
+/* --- Product Card --- */
+.product-card {
+  @apply card-hover relative flex flex-col;
+}
+.product-card-img {
+  @apply w-full aspect-[4/3] object-cover transition-transform duration-500;
+}
+.product-card:hover .product-card-img {
+  transform: scale(1.05);
+}
+
+/* --- Overlay Backdrop --- */
+.overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+}
+
+/* --- Color Swatch --- */
+.color-swatch {
+  @apply w-8 h-8 rounded-full border-2 cursor-pointer transition-all duration-200 flex-shrink-0;
+}
+.color-swatch:hover { @apply scale-110; }
+.color-swatch.selected { @apply ring-2 ring-offset-2 ring-brand-500 scale-110; }
+
+/* --- Animation Utilities --- */
+.hover-lift {
+  @apply transition-transform duration-200 hover:-translate-y-1;
+}
+.animate-count {
+  animation: countUp 0.6s ease-out;
+}
+@keyframes countUp {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Page transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.25s ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* Modal transitions */
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.25s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Toast transition */
+.toast-enter-active { transition: all 0.3s ease-out; }
+.toast-leave-active { transition: all 0.2s ease-in; }
+.toast-enter-from   { opacity: 0; transform: translateX(100%); }
+.toast-leave-to     { opacity: 0; transform: translateX(100%); }
+
+/* Sidebar transition */
+.sidebar-enter-active { transition: all 0.3s ease; }
+.sidebar-leave-active { transition: all 0.25s ease; }
+.sidebar-enter-from   { opacity: 0; transform: translateX(-100%); }
+.sidebar-leave-to     { opacity: 0; transform: translateX(-100%); }

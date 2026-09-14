@@ -6,6 +6,21 @@ class AdminProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         exclude = ['created_at', 'updated_at']
+        extra_kwargs = {
+            'slug': {'required': False, 'allow_blank': True},
+            'material': {'required': False, 'allow_blank': True},
+            'design_style': {'required': False, 'allow_blank': True},
+            'description': {'required': False, 'allow_blank': True},
+            'badge': {'required': False, 'allow_blank': True},
+            'status': {'required': False},
+            'is_active': {'required': False},
+            'price_type': {'required': False},
+            'profile_thickness': {'required': False, 'allow_blank': True},
+            'max_glass': {'required': False, 'allow_blank': True},
+            'sound_insulation': {'required': False, 'allow_blank': True},
+            'climate_resistance': {'required': False, 'allow_blank': True},
+            'delivery_info': {'required': False, 'allow_blank': True},
+        }
 
 
 class AdminOrderStatusSerializer(serializers.Serializer):
