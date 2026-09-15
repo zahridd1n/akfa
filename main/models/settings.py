@@ -29,6 +29,11 @@ class SiteSettings(models.Model):
         max_length=300, blank=True, default="",
         verbose_name="Manzil"
     )
+    map_location = models.CharField(
+        max_length=500, blank=True, default="",
+        verbose_name="Xarita manzili (Google Maps)",
+        help_text="Google Maps'da qidirish uchun aniq manzil yoki koordinata"
+    )
     work_hours = models.CharField(
         max_length=100, blank=True, default="",
         verbose_name="Ish vaqti",

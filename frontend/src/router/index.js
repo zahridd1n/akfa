@@ -7,6 +7,8 @@ const ProductDetail  = () => import('@/views/client/ProductDetailView.vue')
 const CartView       = () => import('@/views/client/CartView.vue')
 const CheckoutView   = () => import('@/views/client/CheckoutView.vue')
 const ProfileView    = () => import('@/views/client/ProfileView.vue')
+const ContactView    = () => import('@/views/client/ContactView.vue')
+const AboutView      = () => import('@/views/client/AboutView.vue')
 
 // Lazy-load admin pages
 const AdminDashboard   = () => import('@/views/admin/DashboardView.vue')
@@ -15,6 +17,7 @@ const AdminProductForm = () => import('@/views/admin/ProductFormView.vue')
 const AdminOrders      = () => import('@/views/admin/OrdersView.vue')
 const AdminCustomers   = () => import('@/views/admin/CustomersView.vue')
 const AdminReports     = () => import('@/views/admin/ReportsView.vue')
+const AdminContacts    = () => import('@/views/admin/ContactsView.vue')
 
 // Layouts
 const ClientLayout = () => import('@/layouts/ClientLayout.vue')
@@ -31,6 +34,8 @@ const routes = [
       { path: 'cart',     name: 'cart',       component: CartView, meta: { requiresAuth: true } },
       { path: 'checkout', name: 'checkout',   component: CheckoutView, meta: { requiresAuth: true } },
       { path: 'profile',  name: 'profile',    component: ProfileView, meta: { requiresAuth: true } },
+      { path: 'contact',  name: 'contact',    component: ContactView },
+      { path: 'about',    name: 'about',      component: AboutView },
     ]
   },
   {
@@ -46,6 +51,7 @@ const routes = [
       { path: 'orders',     name: 'admin-orders',          component: AdminOrders },
       { path: 'customers',  name: 'admin-customers',       component: AdminCustomers },
       { path: 'reports',    name: 'admin-reports',         component: AdminReports },
+      { path: 'contacts',   name: 'admin-contacts',        component: AdminContacts },
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

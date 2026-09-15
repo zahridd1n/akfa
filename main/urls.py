@@ -29,6 +29,7 @@ urlpatterns = [
     # Sayt sozlamalari (ommaviy)
     path('site-settings/', site_settings.site_settings_view, name='site-settings'),
     path('banners/', site_settings.banners_list, name='banners-list'),
+    path('about/', site_settings.about_view, name='about-view'),
     # Admin Panel
     path('admin-panel/dashboard/', admin_views.admin_dashboard, name='admin-dashboard'),
     path('admin-panel/products/', admin_views.admin_products_list, name='admin-products'),
@@ -45,6 +46,11 @@ urlpatterns = [
     path('admin-panel/reports/export/', admin_views.admin_reports_export, name='admin-reports-export'),
     # Admin: Sayt sozlamalari
     path('admin-panel/site-settings/', site_settings.admin_site_settings_update, name='admin-site-settings'),
+    path('admin-panel/about/', site_settings.admin_about_update, name='admin-about-update'),
     path('admin-panel/banners/', site_settings.admin_banner_create, name='admin-banner-create'),
     path('admin-panel/banners/<int:banner_id>/', site_settings.admin_banner_detail, name='admin-banner-detail'),
+    # Contact
+    path('contact/', site_settings.contact_submit, name='contact-submit'),
+    path('admin-panel/contacts/', site_settings.admin_contacts_list, name='admin-contacts'),
+    path('admin-panel/contacts/<int:contact_id>/', site_settings.admin_contact_detail, name='admin-contact-detail'),
 ]

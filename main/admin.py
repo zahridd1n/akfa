@@ -6,7 +6,7 @@ from .models import (
     Category, Product, ProductImage, ProductColor,
     Cart, CartItem,
     Order, OrderItem,
-    SiteSettings, Banner,
+    SiteSettings, Banner, About,
 )
 
 
@@ -127,7 +127,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Kontakt ma'lumotlari", {
-            "fields": ("phone_main", "phone_whatsapp", "phone_extra", "email", "address", "work_hours")
+            "fields": ("phone_main", "phone_whatsapp", "phone_extra", "email", "address", "map_location", "work_hours")
         }),
         ("Ijtimoiy tarmoqlar", {
             "fields": ("telegram_url", "instagram_url", "facebook_url", "youtube_url")
@@ -161,4 +161,40 @@ class BannerAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" style="height:40px; border-radius:4px;">', obj.image.url)
         return "-"
     preview.short_description = "Ko'rinish"
+
+
+@admin.register(About)
+class AboutAdmin(admin.ModelAdmin):
+    """Biz haqimizda sahifasi ma'lumotlari - bitta yozuv"""
+
+    fieldsets = (
+        ("Asosiy ma'lumotlar", {
+            "fields": ("title", "subtitle", "content", "image", "image_preview", "experience_years")
+        }),
+        ("Statistika ko'rsatkichlari", {
+            "fields": (
+                ("stat_1_number", "stat_1_label"),
+                ("stat_2_number", "stat_2_label"),
+                ("stat_3_number", "stat_3_label"),
+                ("stat_4_number", "stat_4_label"),
+            )
+        }),
+        ("Missiya va qadriyatlar", {
+            "fields": ("mission",)
+        }),
+    )
+    readonly_fields = ["image_preview", "updated_at"]
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-height:180px; border-radius:8px;">', obj.image.url)
+        return "Rasm yuklanmagan"
+    image_preview.short_description = "Joriy rasm"
+
+    def has_add_permission(self, request):
+        return not About.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 

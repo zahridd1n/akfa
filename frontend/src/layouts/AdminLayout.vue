@@ -102,7 +102,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { LayoutDashboard, Package, ShoppingBag, Users, BarChart3, Menu, LogOut, Globe, Clock } from '@lucide/vue'
+import { LayoutDashboard, Package, ShoppingBag, Users, BarChart3, Menu, LogOut, Globe, Clock, MessageCircle } from '@lucide/vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlertStore } from '@/stores/alert'
 import { useCartStore } from '@/stores/cart'
@@ -121,6 +121,7 @@ const navItems = [
   { to: '/admin/products',   label: 'Mahsulotlar', icon: Package },
   { to: '/admin/orders',     label: 'Buyurtmalar', icon: ShoppingBag },
   { to: '/admin/customers',  label: 'Mijozlar',    icon: Users },
+  { to: '/admin/contacts',   label: 'Murojatlar',  icon: MessageCircle },
   { to: '/admin/reports',    label: 'Hisobotlar',  icon: BarChart3 },
 ]
 

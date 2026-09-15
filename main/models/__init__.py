@@ -4,6 +4,8 @@ from .product import Category, Product, ProductImage, ProductColor
 from .cart import Cart, CartItem
 from .order import Order, OrderItem
 from .settings import SiteSettings, Banner
+from .contact import ContactMessage
+from .about import About
 
 __all__ = [
     "CustomUser",
@@ -18,4 +20,6 @@ __all__ = [
     "OrderItem",
     "SiteSettings",
     "Banner",
+    "ContactMessage",
+    "About",
 ]

@@ -213,7 +213,7 @@
               <ChevronRight class="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform" />
             </summary>
             <div class="p-5 pt-0 text-slate-600 text-sm">
-              Yetkazib berish va o'rnatish xizmatlari Toshkent shahri va viloyatlar bo'ylab bepul amalga oshiriladi.
+              Yetkazib berish va o'rnatish xizmatlari {{ siteStore.address || "O'zbekiston" }} va viloyatlar bo'ylab bepul amalga oshiriladi.
             </div>
           </details>
         </div>
@@ -233,12 +233,14 @@ import { productsApi } from '@/api/products'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/auth'
 import { useAlertStore } from '@/stores/alert'
+import { useSiteStore } from '@/stores/site'
 import AuthModal from '@/components/client/AuthModal.vue'
 
 const route = useRoute()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const alertStore = useAlertStore()
+const siteStore = useSiteStore()
 
 const product = ref(null)
 const colors = ref([])
@@ -323,6 +325,7 @@ function openAuthModal() {
 }
 
 onMounted(async () => {
+  siteStore.fetchSettings()
   const slug = route.params.slug
   try {
     const [productRes, colorsRes] = await Promise.all([

@@ -4,9 +4,10 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiResponse
-from ..models import SiteSettings, Banner
-from ..serializers.site_settings import SiteSettingsSerializer, BannerSerializer
+from ..models import SiteSettings, Banner, ContactMessage, About
+from ..serializers.site_settings import SiteSettingsSerializer, BannerSerializer, ContactMessageSerializer, AboutSerializer
 from ..permissions.permissions import IsAdminUser
+
 
 
 @extend_schema(
@@ -67,6 +68,43 @@ def admin_site_settings_update(request):
     settings = SiteSettings.get_settings()
     serializer = SiteSettingsSerializer(
         settings,
+        data=request.data,
+        partial=True,
+        context={"request": request},
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=["Sayt sozlamalari"],
+    summary="Biz haqimizda sahifasi ma'lumotlarini olish",
+    responses={200: AboutSerializer},
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def about_view(request):
+    """Biz haqimizda sahifasi ma'lumotlari"""
+    about = About.get_about()
+    serializer = AboutSerializer(about, context={"request": request})
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=["Sayt sozlamalari"],
+    summary="[Admin] Biz haqimizda ma'lumotlarini yangilash",
+    request=AboutSerializer,
+    responses={200: AboutSerializer},
+)
+@api_view(["PUT", "PATCH"])
+@permission_classes([IsAuthenticated, IsAdminUser])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
+def admin_about_update(request):
+    """[Admin] Biz haqimizda ma'lumotlarini yangilash"""
+    about = About.get_about()
+    serializer = AboutSerializer(
+        about,
         data=request.data,
         partial=True,
         context={"request": request},
@@ -182,3 +220,46 @@ def admin_banner_detail(request, banner_id):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data)
+
+
+# ─── Contact Messages ─────────────────────────────────────────────────────────
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def contact_submit(request):
+    """Murojat yuborish (ommaviy)"""
+    serializer = ContactMessageSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response({"detail": "Murojatingiz qabul qilindi!"}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def admin_contacts_list(request):
+    """[Admin] Murojatlar ro'yxati"""
+    qs = ContactMessage.objects.all()
+    # mark as read filter
+    is_read = request.query_params.get("is_read")
+    if is_read is not None:
+        qs = qs.filter(is_read=is_read.lower() == "true")
+    serializer = ContactMessageSerializer(qs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def admin_contact_detail(request, contact_id):
+    """[Admin] Murojatni o'qildi deb belgilash yoki o'chirish"""
+    try:
+        msg = ContactMessage.objects.get(id=contact_id)
+    except ContactMessage.DoesNotExist:
+        return Response({"error": "Topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "DELETE":
+        msg.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    msg.is_read = request.data.get("is_read", msg.is_read)
+    msg.save()
+    return Response(ContactMessageSerializer(msg).data)

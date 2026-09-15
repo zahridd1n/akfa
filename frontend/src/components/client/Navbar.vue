@@ -13,37 +13,40 @@
         <nav class="hidden md:flex items-center gap-6">
           <router-link to="/" class="nav-link" :class="{ active: route.path === '/' }">Bosh sahifa</router-link>
           <router-link to="/catalog" class="nav-link" :class="{ active: route.path.startsWith('/catalog') }">Katalog</router-link>
+          <router-link to="/about" class="nav-link" :class="{ active: route.path === '/about' }">Biz haqimizda</router-link>
+          <router-link to="/contact" class="nav-link" :class="{ active: route.path === '/contact' }">Aloqa</router-link>
           <router-link to="/profile?tab=orders" class="nav-link">Buyurtmalarim</router-link>
-          <a href="/#contact" class="nav-link">Bog'lanish</a>
         </nav>
 
         <!-- Right Actions -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2">
 
-          <!-- Search (desktop only) -->
-          <div class="hidden lg:flex items-center relative">
-            <input
-              v-model="searchQuery"
-              @keyup.enter="doSearch"
-              type="text"
+          <!-- Live Search (Desktop only) -->
+          <div class="hidden lg:block w-52 focus-within:w-80 transition-all duration-300">
+            <LiveSearch
               placeholder="Qidirish..."
-              class="pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:bg-white transition-all w-48 focus:w-64"
+              min-dropdown-width="380"
+              custom-input-class="pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 placeholder-slate-400 focus:bg-white"
             />
-            <Search class="absolute left-3 w-4 h-4 text-slate-400" />
           </div>
+
+          <!-- Mobile Search Toggle Button (md:hidden) -->
+          <button
+            @click="mobileSearchOpen = !mobileSearchOpen"
+            class="md:hidden p-2 text-slate-700 hover:text-brand-600 transition-colors rounded-xl"
+            aria-label="Qidiruv"
+          >
+            <Search class="w-5 h-5" />
+          </button>
 
           <!-- Cart Icon -->
           <router-link to="/cart" class="relative p-2 text-slate-700 hover:text-brand-600 transition-colors">
-            <ShoppingCart class="w-6 h-6" />
+            <ShoppingCart class="w-5 h-5 sm:w-6 sm:h-6" />
             <span v-if="cartStore.itemCount > 0" class="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center border-2 border-white transform translate-x-1 -translate-y-1">
               {{ cartStore.itemCount }}
             </span>
           </router-link>
 
-          <!-- Contact Button (desktop) -->
-          <a href="/#contact" class="hidden sm:inline-flex btn-md btn-outline border-slate-200 text-slate-700 hover:bg-slate-50">
-            Aloqa
-          </a>
 
           <!-- User Menu (desktop) -->
           <div v-if="authStore.isLoggedIn" class="hidden md:block relative" ref="userMenuRef">
@@ -91,13 +94,38 @@
       </div>
     </div>
 
+    <!-- Mobile Live Search Slide Bar -->
+    <Transition name="slide-down">
+      <div v-if="mobileSearchOpen" class="md:hidden border-t border-slate-100 bg-white/95 backdrop-blur-md px-4 py-3 shadow-md">
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <LiveSearch
+              :autofocus="true"
+              placeholder="Mahsulot nomini yozing..."
+              @select="mobileSearchOpen = false"
+              @search-submit="mobileSearchOpen = false"
+            />
+          </div>
+          <button
+            @click="mobileSearchOpen = false"
+            class="p-2 text-slate-400 hover:text-slate-600 rounded-xl"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Mobile Hamburger Drawer (slide from top) -->
     <Transition name="slide-down">
       <div v-if="mobileMenuOpen" class="md:hidden border-t border-slate-100 bg-white px-4 py-4 flex flex-col gap-2 shadow-lg">
-        <!-- Search -->
-        <div class="relative mb-1">
-          <input v-model="searchQuery" @keyup.enter="doSearch" type="text" placeholder="Qidirish..." class="form-input text-sm pl-9" />
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <!-- Live Search in drawer -->
+        <div class="mb-2">
+          <LiveSearch
+            placeholder="Mahsulotlarni qidirish..."
+            @select="mobileMenuOpen = false"
+            @search-submit="mobileMenuOpen = false"
+          />
         </div>
         <router-link to="/" @click="mobileMenuOpen = false" class="mobile-nav-link" :class="{ 'text-brand-600 bg-brand-50': route.path === '/' }">
           <Home class="w-4 h-4" /> Bosh sahifa
@@ -108,9 +136,12 @@
         <router-link to="/profile?tab=orders" @click="mobileMenuOpen = false" class="mobile-nav-link">
           <Package class="w-4 h-4" /> Buyurtmalarim
         </router-link>
-        <a href="/#contact" @click="mobileMenuOpen = false" class="mobile-nav-link">
-          <Phone class="w-4 h-4" /> Bog'lanish
-        </a>
+        <router-link to="/about" @click="mobileMenuOpen = false" class="mobile-nav-link" :class="{ 'text-brand-600 bg-brand-50': route.path === '/about' }">
+          <Info class="w-4 h-4" /> Biz haqimizda
+        </router-link>
+        <router-link to="/contact" @click="mobileMenuOpen = false" class="mobile-nav-link" :class="{ 'text-brand-600 bg-brand-50': route.path === '/contact' }">
+          <Phone class="w-4 h-4" /> Aloqa
+        </router-link>
         <template v-if="authStore.isLoggedIn">
           <div class="h-px bg-slate-100 my-1" />
           <router-link to="/profile" @click="mobileMenuOpen = false" class="mobile-nav-link">
@@ -192,11 +223,12 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Search, ShoppingCart, User, Package, MapPin, LogOut, Menu, X, LayoutDashboard, Home, Grid, Phone } from '@lucide/vue'
+import { Search, ShoppingCart, User, Package, MapPin, LogOut, Menu, X, LayoutDashboard, Home, Grid, Phone, Info } from '@lucide/vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
 import { useAlertStore } from '@/stores/alert'
 import AuthModal from '@/components/client/AuthModal.vue'
+import LiveSearch from '@/components/client/LiveSearch.vue'
 
 const router = useRouter()
 const route  = useRoute()
@@ -204,11 +236,12 @@ const authStore  = useAuthStore()
 const cartStore  = useCartStore()
 const alertStore = useAlertStore()
 
-const searchQuery    = ref('')
-const mobileMenuOpen = ref(false)
-const userMenuOpen   = ref(false)
-const authModalOpen  = ref(false)
-const userMenuRef    = ref(null)
+const searchQuery      = ref('')
+const mobileMenuOpen   = ref(false)
+const mobileSearchOpen = ref(false)
+const userMenuOpen     = ref(false)
+const authModalOpen    = ref(false)
+const userMenuRef      = ref(null)
 
 function doSearch() {
   if (searchQuery.value.trim()) {

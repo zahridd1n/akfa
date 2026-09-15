@@ -3,7 +3,20 @@
 
     <!-- Page Header -->
     <div class="bg-white/80 backdrop-blur border-b border-[#C7DDEA]/60 px-4 pt-4 pb-3">
-      <h1 class="text-2xl font-bold text-slate-900">Katalog</h1>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Katalog</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Barcha sifatli mahsulotlar va konstruksiyalar</p>
+        </div>
+        <!-- Prominent Live Search in Catalog -->
+        <div class="w-full sm:w-80">
+          <LiveSearch
+            placeholder="Katalogdan qidirish..."
+            min-dropdown-width="340"
+            @search-submit="onCatalogSearchSubmit"
+          />
+        </div>
+      </div>
 
       <!-- Mobile Filter Chips Row -->
       <div class="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
@@ -296,11 +309,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Filter, ArrowUpDown, X, Package, ChevronLeft, ChevronRight, Check } from '@lucide/vue'
 import { productsApi } from '@/api/products'
 import ProductCard from '@/components/client/ProductCard.vue'
+import LiveSearch from '@/components/client/LiveSearch.vue'
 
 const route  = useRoute()
 const router = useRouter()
@@ -330,6 +344,21 @@ const filters = ref({
   material: '',
   ordering: '-created_at',
 })
+
+// Watch route changes to update search/category in catalog automatically
+watch(
+  () => route.query,
+  (newQuery) => {
+    filters.value.search   = newQuery.search || ''
+    filters.value.category = newQuery.category || ''
+    fetchProducts(true)
+  }
+)
+
+function onCatalogSearchSubmit(q) {
+  filters.value.search = q
+  router.replace({ query: { ...route.query, search: q || undefined } })
+}
 
 const hasActiveFilters = computed(() =>
   filters.value.category || filters.value.material || filters.value.search
