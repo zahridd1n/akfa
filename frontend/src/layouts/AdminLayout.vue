@@ -145,6 +145,6 @@ async function handleLogout() {
   await authStore.logout()
   cartStore.resetCart()
   alertStore.success('Tizimdan chiqdingiz')
-  router.push('/')
+  router.push('/admin/login')
 }
 </script>

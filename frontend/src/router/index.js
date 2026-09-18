@@ -11,6 +11,7 @@ const ContactView    = () => import('@/views/client/ContactView.vue')
 const AboutView      = () => import('@/views/client/AboutView.vue')
 
 // Lazy-load admin pages
+const AdminLogin       = () => import('@/views/admin/LoginView.vue')
 const AdminDashboard   = () => import('@/views/admin/DashboardView.vue')
 const AdminProducts    = () => import('@/views/admin/ProductsView.vue')
 const AdminProductForm = () => import('@/views/admin/ProductFormView.vue')
@@ -37,6 +38,15 @@ const routes = [
       { path: 'contact',  name: 'contact',    component: ContactView },
       { path: 'about',    name: 'about',      component: AboutView },
     ]
+  },
+  {
+    path: '/admin/login',
+    name: 'admin-login',
+    component: AdminLogin,
+  },
+  {
+    path: '/dashboard',
+    redirect: '/admin/dashboard',
   },
   {
     path: '/admin',
@@ -71,13 +81,29 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || 'null')
+  const isAdmin = user?.role === 'admin'
 
-  if (to.meta.requiresAuth && !token) {
-    window.dispatchEvent(new CustomEvent('auth:open-modal'))
-    return next('/')
+  // If already logged in as admin and visiting /admin/login -> redirect to dashboard
+  if (to.path === '/admin/login') {
+    if (token && isAdmin) {
+      return next('/admin/dashboard')
+    }
+    return next()
   }
 
-  if (to.meta.requiresAdmin && user?.role !== 'admin') {
+  // Protected admin routes (/admin/* or /dashboard)
+  if (to.path.startsWith('/admin') || to.meta.requiresAdmin) {
+    if (!token || !isAdmin) {
+      return next({
+        path: '/admin/login',
+        query: { redirect: to.fullPath },
+      })
+    }
+  }
+
+  // Protected client routes
+  if (to.meta.requiresAuth && !token) {
+    window.dispatchEvent(new CustomEvent('auth:open-modal'))
     return next('/')
   }
 
