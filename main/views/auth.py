@@ -1,4 +1,4 @@
-﻿from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
@@ -52,7 +52,7 @@ def register_view(request):
             "id": user.id,
             "phone_number": user.phone_number,
             "full_name": user.full_name,
-            "role": user.role,
+            "role": str(user.role),
         },
     }, status=status.HTTP_201_CREATED)
 
@@ -92,7 +92,7 @@ def login_view(request):
             "id": user.id,
             "phone_number": user.phone_number,
             "full_name": user.full_name,
-            "role": user.role,
+            "role": str(user.role),
         },
     })
 

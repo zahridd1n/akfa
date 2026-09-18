@@ -1,10 +1,23 @@
-﻿import re
+import re
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 
+def normalize_phone(phone: str) -> str:
+    """Telefon raqamni tozalash va standart +998XXXXXXXXX formatga keltirish"""
+    if not phone:
+        return ""
+    cleaned = re.sub(r"[\s\-\(\)\.]", "", str(phone).strip())
+    if cleaned.startswith("998") and not cleaned.startswith("+"):
+        cleaned = "+" + cleaned
+    elif len(cleaned) == 9 and not cleaned.startswith("+"):
+        cleaned = "+998" + cleaned
+    return cleaned
+
+
 def validate_phone(phone: str) -> bool:
     """O'zbek telefon raqami validatsiyasi: +998XXXXXXXXX"""
+    phone = normalize_phone(phone)
     return bool(re.match(r"^\+998[0-9]{9}$", phone))
 
 
@@ -12,6 +25,7 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("Telefon raqam kiritilishi shart")
+        phone_number = normalize_phone(phone_number)
         if not validate_phone(phone_number):
             raise ValueError("Noto'g'ri telefon raqam formati (+998XXXXXXXXX)")
         user = self.model(phone_number=phone_number, **extra_fields)

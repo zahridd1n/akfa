@@ -23,7 +23,23 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('user', JSON.stringify(res.data.user))
       return { success: true }
     } catch (err) {
-      error.value = err.response?.data?.detail || 'Login xatolik'
+      const errData = err.response?.data
+      if (typeof errData === 'string') {
+        error.value = errData
+      } else if (errData?.detail) {
+        error.value = errData.detail
+      } else if (errData?.non_field_errors) {
+        error.value = Array.isArray(errData.non_field_errors) ? errData.non_field_errors[0] : errData.non_field_errors
+      } else if (errData?.phone_number) {
+        error.value = Array.isArray(errData.phone_number) ? errData.phone_number[0] : errData.phone_number
+      } else if (errData?.password) {
+        error.value = Array.isArray(errData.password) ? errData.password[0] : errData.password
+      } else if (typeof errData === 'object' && errData !== null) {
+        const firstVal = Object.values(errData)[0]
+        error.value = Array.isArray(firstVal) ? firstVal[0] : (typeof firstVal === 'string' ? firstVal : 'Login xatolik')
+      } else {
+        error.value = 'Telefon raqam yoki parol noto\'g\'ri'
+      }
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -41,7 +57,8 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('user', JSON.stringify(res.data.user))
       return { success: true }
     } catch (err) {
-      error.value = err.response?.data || 'Ro\'yxatdan o\'tishda xatolik'
+      const errData = err.response?.data
+      error.value = errData || 'Ro\'yxatdan o\'tishda xatolik'
       return { success: false, error: error.value }
     } finally {
       loading.value = false

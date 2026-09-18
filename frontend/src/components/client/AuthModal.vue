@@ -79,20 +79,24 @@
                 id="register-name"
                 required
               />
-              <p v-if="errors.full_name" class="form-error">{{ errors.full_name[0] }}</p>
+              <p v-if="errors.full_name" class="form-error">
+                {{ Array.isArray(errors.full_name) ? errors.full_name[0] : errors.full_name }}
+              </p>
             </div>
             <div>
               <label class="form-label">Telefon raqam</label>
               <input
                 v-model="registerForm.phone_number"
                 type="tel"
-                placeholder="+998901234567"
+                placeholder="+998 90 123 45 67"
                 class="form-input"
                 :class="{ 'form-input-error': errors.phone_number }"
                 id="register-phone"
                 required
               />
-              <p v-if="errors.phone_number" class="form-error">{{ errors.phone_number[0] }}</p>
+              <p v-if="errors.phone_number" class="form-error">
+                {{ Array.isArray(errors.phone_number) ? errors.phone_number[0] : errors.phone_number }}
+              </p>
             </div>
             <div>
               <label class="form-label">Parol</label>
@@ -100,7 +104,7 @@
                 <input
                   v-model="registerForm.password"
                   :type="showPassword ? 'text' : 'password'"
-                  placeholder="Kamida 8 ta belgi"
+                  placeholder="Kamida 6 ta belgi"
                   class="form-input pr-12"
                   id="register-password"
                   required
@@ -110,7 +114,9 @@
                   <EyeOff v-else class="w-4.5 h-4.5" />
                 </button>
               </div>
-              <p v-if="errors.password" class="form-error">{{ errors.password[0] }}</p>
+              <p v-if="errors.password" class="form-error">
+                {{ Array.isArray(errors.password) ? errors.password[0] : errors.password }}
+              </p>
             </div>
 
             <p v-if="errors.general" class="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3 flex items-center gap-2">
@@ -182,7 +188,7 @@ function switchMode() {
 
 async function handleLogin() {
   errors.value = {}
-  const result = await authStore.login(loginForm.value.phone, loginForm.value.password)
+  const result = await authStore.login(loginForm.value.phone.trim(), loginForm.value.password)
   if (result.success) {
     await cartStore.fetchCart()
     alertStore.success(`Xush kelibsiz, ${authStore.fullName}!`)
@@ -194,14 +200,26 @@ async function handleLogin() {
 
 async function handleRegister() {
   errors.value = {}
-  const result = await authStore.register(registerForm.value)
+  const payload = {
+    full_name: registerForm.value.full_name.trim(),
+    phone_number: registerForm.value.phone_number.trim(),
+    password: registerForm.value.password,
+  }
+  const result = await authStore.register(payload)
   if (result.success) {
     await cartStore.fetchCart()
     alertStore.success('Muvaffaqiyatli ro\'yxatdan o\'tdingiz!')
     emit('success')
   } else {
-    if (typeof result.error === 'object') {
-      errors.value = result.error
+    if (typeof result.error === 'object' && result.error !== null) {
+      errors.value = { ...result.error }
+      const knownKeys = ['full_name', 'phone_number', 'password']
+      const unhandled = Object.entries(result.error)
+        .filter(([k]) => !knownKeys.includes(k))
+        .map(([k, v]) => Array.isArray(v) ? v.join(', ') : v)
+      if (unhandled.length > 0) {
+        errors.value.general = unhandled.join('. ')
+      }
     } else {
       errors.value.general = result.error || 'Xatolik yuz berdi'
     }
