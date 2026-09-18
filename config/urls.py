@@ -1,12 +1,12 @@
-﻿from django.contrib import admin
+from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
-    # Django admin
-    path('admin/', admin.site.urls),
+    # Django built-in admin (baza boshqaruvi)
+    path('django-admin/', admin.site.urls),
 
     # API v1
     path('api/', include('main.urls')),
