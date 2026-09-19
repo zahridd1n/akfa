@@ -268,9 +268,9 @@ const chartPeriods = [
   { value: 'week', label: 'Haftalik' },
 ]
 
-function todayLabel() {
-  return new Date().toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-}
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+)
 
 const todayOrders = computed(() => dashboardData.value?.today_orders || 0)
 const pendingOrders = computed(() => dashboardData.value?.pending_orders || 0)
