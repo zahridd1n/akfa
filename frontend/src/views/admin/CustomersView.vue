@@ -183,7 +183,7 @@
                             <Star class="w-3 h-3" /> <span class="font-medium">Asosiy manzil</span>
                           </div>
                           <p class="text-slate-200">
-                            {{ [addr.region, addr.city, addr.district, addr.street, addr.house, addr.apartment].filter(Boolean).join(', ') || '—' }}
+                            {{ [addr.region_display || addr.region, addr.city, addr.street, addr.house_number, addr.apartment, addr.full_address].filter(Boolean).join(', ') || '—' }}
                           </p>
                           <p v-if="addr.extra_info" class="text-slate-500 mt-1">{{ addr.extra_info }}</p>
                         </div>

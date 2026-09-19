@@ -159,9 +159,9 @@
                             <!-- Image -->
                             <div class="w-16 h-16 rounded-lg overflow-hidden bg-slate-700 flex-shrink-0">
                               <img
-                                v-if="item.product_image || item.image"
-                                :src="item.product_image || item.image"
-                                :alt="item.product_name || item.name"
+                                v-if="item.main_image"
+                                :src="item.main_image"
+                                :alt="item.product_name"
                                 class="w-full h-full object-cover"
                               />
                               <div v-else class="w-full h-full flex items-center justify-center">
@@ -170,29 +170,32 @@
                             </div>
 
                             <div class="flex-1 min-w-0">
-                              <p class="font-semibold text-white text-sm">{{ item.product_name || item.name || '—' }}</p>
+                              <p class="font-semibold text-white text-sm">{{ item.product_name || '—' }}</p>
 
                               <!-- Color & Size badges -->
                               <div class="flex flex-wrap gap-2 mt-1.5">
-                                <div v-if="item.color || item.color_name || item.color_hex" class="flex items-center gap-1.5 bg-slate-700/60 rounded-lg px-2 py-1">
+                                <div v-if="item.color_name || item.color_hex" class="flex items-center gap-1.5 bg-slate-700/60 rounded-lg px-2 py-1">
                                   <div
                                     class="w-3 h-3 rounded-full border border-slate-500 flex-shrink-0"
-                                    :style="{ backgroundColor: item.color_hex || item.color_code || (item.color?.startsWith('#') ? item.color : '#888') }"
+                                    :style="{ backgroundColor: item.color_hex || '#888' }"
                                   />
-                                  <span class="text-xs text-slate-300">{{ item.color_name || item.color }}</span>
+                                  <span class="text-xs text-slate-300">{{ item.color_name }}</span>
                                 </div>
-                                <div v-if="item.size || item.size_name || item.size_value" class="flex items-center gap-1 bg-slate-700/60 rounded-lg px-2 py-1">
+                                <div v-if="item.width_mm || item.height_mm" class="flex items-center gap-1 bg-slate-700/60 rounded-lg px-2 py-1">
                                   <span class="text-xs text-slate-400">O'lcham:</span>
-                                  <span class="text-xs font-medium text-slate-200">{{ item.size_name || item.size_value || item.size }}</span>
+                                  <span class="text-xs font-medium text-slate-200">
+                                    {{ item.width_mm }}×{{ item.height_mm }} mm
+                                    <span v-if="item.sqm" class="text-slate-500">({{ item.sqm }} m²)</span>
+                                  </span>
                                 </div>
                               </div>
 
                               <div class="flex items-center justify-between mt-2">
                                 <span class="text-xs text-slate-500">
-                                  {{ item.quantity }} dona × {{ formatPrice(item.price || item.unit_price) }}
+                                  {{ item.quantity }} dona × {{ formatPrice(item.unit_price) }}
                                 </span>
                                 <span class="text-sm font-bold text-emerald-400">
-                                  {{ formatPrice((item.price || item.unit_price) * item.quantity) }}
+                                  {{ formatPrice(item.total_price) }}
                                 </span>
                               </div>
                             </div>
@@ -272,13 +275,12 @@ const orderItems = computed(() => {
 })
 
 const addressFields = [
-  ['Viloyat', 'region'],
-  ['Shahar', 'city'],
-  ['Tuman', 'district'],
+  ['Viloyat', 'region_display'],
+  ['Shahar/Tuman', 'city'],
   ["Ko'cha", 'street'],
-  ['Uy', 'house'],
+  ['Uy raqami', 'house_number'],
   ['Xonadon', 'apartment'],
-  ['Izoh', 'extra_info'],
+  ['To\'liq manzil', 'full_address'],
 ]
 
 const columns = ['Buyurtma #', 'Mijoz', 'Manzil', 'Summa', 'Holat', 'Sana', 'Amal']
