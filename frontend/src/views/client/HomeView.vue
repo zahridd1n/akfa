@@ -25,15 +25,30 @@
             <p class="text-sm text-slate-500 mb-4 leading-relaxed">
               Sifat, xavfsizlik va zamonaviy dizayn uyg'unligi.
             </p>
-            <div class="flex flex-col gap-2">
-              <router-link to="/catalog"
-                class="block text-center py-3 bg-brand-950 hover:bg-brand-900 text-white rounded-xl font-semibold text-sm transition-colors">
+            <div class="flex flex-col gap-2.5">
+              <!-- Asosiy tugma: Ro'yxatdan o'tish (agar kirmagan bo'lsa) / Bog'lanish (agar kirgan bo'lsa) -->
+              <button
+                v-if="!authStore.isLoggedIn"
+                @click="openAuthModal"
+                class="w-full py-3.5 bg-brand-950 hover:bg-brand-900 text-white rounded-xl font-bold text-sm transition-colors shadow-md text-center"
+              >
                 Ro'yxatdan o'tish
-              </router-link>
-              <button @click="openAuthModal"
-                class="block text-center py-3 border-2 border-brand-950 text-brand-950 rounded-xl font-semibold text-sm transition-colors hover:bg-brand-50">
-                Sotuvchi bilan bog'lanish
               </button>
+              <router-link
+                v-else
+                to="/contact"
+                class="w-full py-3.5 bg-brand-950 hover:bg-brand-900 text-white rounded-xl font-bold text-sm transition-colors shadow-md text-center"
+              >
+                Bog'lanish
+              </router-link>
+
+              <!-- 2-tugma: Mahsulotlar (Katalog) doimiy -->
+              <router-link
+                to="/catalog"
+                class="w-full py-3.5 border-2 border-brand-950 text-brand-950 rounded-xl font-bold text-sm transition-colors hover:bg-brand-50 text-center"
+              >
+                Mahsulotlar
+              </router-link>
             </div>
           </div>
         </div>
@@ -59,15 +74,30 @@
             <p class="text-base text-slate-200 mb-8 leading-relaxed">
               Sifat, xavfsizlik va zamonaviy dizayn uyg'unligi. Mukammal yechimlar bilan uyingizni yangilang.
             </p>
-            <div class="flex flex-wrap gap-3">
-              <router-link to="/catalog"
-                class="px-8 py-3.5 bg-brand-950 hover:bg-brand-900 text-white rounded-xl font-semibold text-sm uppercase tracking-wider transition-colors">
-                Katalogni ko'rish
-              </router-link>
-              <button @click="openAuthModal"
-                class="px-8 py-3.5 border-2 border-white text-white hover:bg-white hover:text-slate-900 rounded-xl font-semibold text-sm uppercase tracking-wider transition-colors">
-                Bog'lanish
+            <div class="flex flex-wrap items-center gap-3.5">
+              <!-- Asosiy tugma: Ro'yxatdan o'tish (agar kirmagan bo'lsa) / Bog'lanish (agar kirgan bo'lsa) -->
+              <button
+                v-if="!authStore.isLoggedIn"
+                @click="openAuthModal"
+                class="px-8 py-3.5 bg-brand-950 hover:bg-brand-900 text-white rounded-xl font-bold text-sm uppercase tracking-wider transition-all shadow-lg hover:shadow-xl"
+              >
+                Ro'yxatdan o'tish
               </button>
+              <router-link
+                v-else
+                to="/contact"
+                class="px-8 py-3.5 bg-brand-950 hover:bg-brand-900 text-white rounded-xl font-bold text-sm uppercase tracking-wider transition-all shadow-lg hover:shadow-xl"
+              >
+                Bog'lanish
+              </router-link>
+
+              <!-- 2-tugma: Mahsulotlar (Katalog) doimiy -->
+              <router-link
+                to="/catalog"
+                class="px-8 py-3.5 border-2 border-white text-white hover:bg-white hover:text-slate-900 rounded-xl font-bold text-sm uppercase tracking-wider transition-all"
+              >
+                Mahsulotlar
+              </router-link>
             </div>
           </div>
         </div>
@@ -307,9 +337,11 @@ import { Plus, Phone, MapPin, Clock, ArrowRight } from '@lucide/vue'
 import { productsApi } from '@/api/products'
 import { useAlertStore } from '@/stores/alert'
 import { useSiteStore } from '@/stores/site'
+import { useAuthStore } from '@/stores/auth'
 
 const alertStore = useAlertStore()
-const siteStore = useSiteStore()
+const siteStore  = useSiteStore()
+const authStore  = useAuthStore()
 
 const banners           = ref([])
 const categories        = ref([])
