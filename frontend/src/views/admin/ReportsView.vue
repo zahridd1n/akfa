@@ -1,21 +1,24 @@
 <template>
-  <div class="space-y-6">
-    <h1 class="text-2xl font-bold text-white">Hisobotlar & Export</h1>
+  <div class="space-y-5 max-w-full overflow-hidden">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-bold text-white">Hisobotlar & Export</h1>
+      <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Sotuvlar va daromadlar bo'yicha tahlil</p>
+    </div>
 
     <!-- Date Range -->
-    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-      <h2 class="font-semibold text-white mb-4">Sana oralig'ini tanlang</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-slate-800/90 rounded-2xl p-4 sm:p-6 border border-slate-700/80 shadow-sm">
+      <h2 class="font-semibold text-white text-sm sm:text-base mb-3 sm:mb-4">Sana oralig'ini tanlang</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div>
-          <label class="form-label text-slate-300">Boshlanish sanasi</label>
-          <input v-model="dateFrom" type="date" class="form-input bg-slate-700 border-slate-600 text-white focus:border-brand-500" id="report-date-from" />
+          <label class="form-label text-slate-300 text-xs">Boshlanish sanasi</label>
+          <input v-model="dateFrom" type="date" class="form-input bg-slate-700/80 border-slate-600 text-white focus:border-brand-500 text-xs sm:text-sm" id="report-date-from" />
         </div>
         <div>
-          <label class="form-label text-slate-300">Tugash sanasi</label>
-          <input v-model="dateTo" type="date" class="form-input bg-slate-700 border-slate-600 text-white focus:border-brand-500" id="report-date-to" />
+          <label class="form-label text-slate-300 text-xs">Tugash sanasi</label>
+          <input v-model="dateTo" type="date" class="form-input bg-slate-700/80 border-slate-600 text-white focus:border-brand-500 text-xs sm:text-sm" id="report-date-to" />
         </div>
         <div class="flex items-end">
-          <button @click="fetchReport" :disabled="loading" class="btn-lg btn-primary w-full" id="generate-report-btn">
+          <button @click="fetchReport" :disabled="loading" class="btn-md sm:btn-lg btn-primary w-full" id="generate-report-btn">
             <span v-if="!loading">Hisobot yaratish</span>
             <div v-else class="spinner" />
           </button>
@@ -24,32 +27,32 @@
     </div>
 
     <!-- Results -->
-    <div v-if="report" class="space-y-6">
+    <div v-if="report" class="space-y-5">
       <!-- Summary KPIs -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700">
-          <p class="text-slate-400 text-sm mb-2">Jami buyurtmalar</p>
-          <p class="text-3xl font-bold text-white">{{ report.total_orders || 0 }}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div class="bg-slate-800/90 rounded-2xl p-4 sm:p-5 border border-slate-700/80 shadow-sm">
+          <p class="text-slate-400 text-xs sm:text-sm mb-1.5">Jami buyurtmalar</p>
+          <p class="text-2xl sm:text-3xl font-bold text-white">{{ report.total_orders || 0 }}</p>
         </div>
-        <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700">
-          <p class="text-slate-400 text-sm mb-2">Jami tushum</p>
-          <p class="text-3xl font-bold text-emerald-400">{{ formatPrice(report.total_revenue) }}</p>
+        <div class="bg-slate-800/90 rounded-2xl p-4 sm:p-5 border border-slate-700/80 shadow-sm">
+          <p class="text-slate-400 text-xs sm:text-sm mb-1.5">Jami tushum</p>
+          <p class="text-2xl sm:text-3xl font-bold text-emerald-400 truncate">{{ formatPrice(report.total_revenue) }}</p>
         </div>
-        <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700">
-          <p class="text-slate-400 text-sm mb-2">O'rtacha buyurtma</p>
-          <p class="text-3xl font-bold text-brand-400">{{ formatPrice(report.avg_order_value) }}</p>
+        <div class="bg-slate-800/90 rounded-2xl p-4 sm:p-5 border border-slate-700/80 shadow-sm">
+          <p class="text-slate-400 text-xs sm:text-sm mb-1.5">O'rtacha buyurtma</p>
+          <p class="text-2xl sm:text-3xl font-bold text-brand-400 truncate">{{ formatPrice(report.avg_order_value) }}</p>
         </div>
       </div>
 
       <!-- Export Buttons -->
-      <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-        <h2 class="font-semibold text-white mb-4">Yuklab olish</h2>
-        <div class="flex flex-wrap gap-3">
-          <button @click="exportReport('excel')" :disabled="exporting" class="btn-md btn-primary" id="export-excel-btn">
+      <div class="bg-slate-800/90 rounded-2xl p-4 sm:p-6 border border-slate-700/80 shadow-sm">
+        <h2 class="font-semibold text-white text-sm sm:text-base mb-3 sm:mb-4">Yuklab olish</h2>
+        <div class="grid grid-cols-1 sm:flex gap-3">
+          <button @click="exportReport('excel')" :disabled="exporting" class="btn-md btn-primary justify-center" id="export-excel-btn">
             <span v-if="!exporting">📊 Excel (.xlsx)</span>
             <div v-else class="spinner" />
           </button>
-          <button @click="exportReport('word')" :disabled="exporting" class="btn-md btn-secondary" id="export-word-btn">
+          <button @click="exportReport('word')" :disabled="exporting" class="btn-md bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 justify-center" id="export-word-btn">
             📄 Word (.docx)
           </button>
         </div>

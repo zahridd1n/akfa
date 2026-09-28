@@ -156,14 +156,22 @@
         <p class="text-slate-400 text-xs mb-4">Har bir rang uchun narx modifikatorini kiriting. 0 = baza narx, musbat = qo'shimcha narx</p>
 
         <div class="space-y-3 mb-4">
-          <div v-for="(color, i) in form.colors" :key="i" class="flex items-center gap-3 bg-slate-700 rounded-xl p-3">
-            <div class="w-8 h-8 rounded-lg border border-slate-600 flex-shrink-0" :style="{ backgroundColor: color.hex_code || '#888' }" />
-            <input v-model="color.name" type="text" placeholder="Rang nomi" class="form-input bg-slate-600 border-slate-500 text-white text-sm py-1.5 flex-1" />
-            <input v-model="color.hex_code" type="color" class="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0 p-0.5 flex-shrink-0" />
-            <input v-model.number="color.price_modifier" type="number" step="1000" placeholder="Narx modif." class="form-input bg-slate-600 border-slate-500 text-white text-sm py-1.5 w-36" />
-            <button type="button" @click="form.colors.splice(i, 1)" class="text-red-400 hover:text-red-300 flex-shrink-0">
-              <X class="w-4 h-4" />
-            </button>
+          <div
+            v-for="(color, i) in form.colors"
+            :key="i"
+            class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 bg-slate-700/80 rounded-xl p-3 border border-slate-600/60"
+          >
+            <div class="flex items-center gap-2 flex-1 min-w-[140px]">
+              <div class="w-8 h-8 rounded-lg border border-slate-600 flex-shrink-0" :style="{ backgroundColor: color.hex_code || '#888' }" />
+              <input v-model="color.name" type="text" placeholder="Rang nomi" class="form-input bg-slate-600 border-slate-500 text-white text-xs sm:text-sm py-1.5 flex-1" />
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <input v-model="color.hex_code" type="color" class="w-9 h-9 rounded-lg cursor-pointer bg-transparent border-0 p-0.5 flex-shrink-0" />
+              <input v-model.number="color.price_modifier" type="number" step="1000" placeholder="Qo'shimcha narx" class="form-input bg-slate-600 border-slate-500 text-white text-xs sm:text-sm py-1.5 flex-1 sm:w-36" />
+              <button type="button" @click="form.colors.splice(i, 1)" class="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-950/30 flex-shrink-0">
+                <X class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -173,12 +181,12 @@
       </div>
 
       <!-- Submit -->
-      <div class="flex gap-3">
-        <button type="submit" :disabled="submitting" class="btn-lg btn-primary" id="product-form-submit">
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
+        <button type="submit" :disabled="submitting" class="btn-md sm:btn-lg btn-primary justify-center" id="product-form-submit">
           <span v-if="!submitting">{{ isEdit ? 'Saqlash' : 'Mahsulot qo\'shish' }}</span>
           <div v-else class="spinner" />
         </button>
-        <router-link to="/admin/products" class="btn-lg btn-secondary">Bekor qilish</router-link>
+        <router-link to="/admin/products" class="btn-md sm:btn-lg bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 justify-center text-center">Bekor qilish</router-link>
       </div>
     </form>
   </div>

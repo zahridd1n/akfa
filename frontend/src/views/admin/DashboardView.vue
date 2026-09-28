@@ -1,13 +1,13 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5 max-w-full overflow-hidden">
     <!-- Page Title -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-white mb-1">Dashboard</h1>
-        <p class="text-slate-400 text-sm">Saramax savdo statistikasi va ko'rsatkichlari</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Dashboard</h1>
+        <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Saramax savdo statistikasi va ko'rsatkichlari</p>
       </div>
-      <div class="flex items-center gap-2 text-sm text-slate-400">
-        <Clock class="w-4 h-4" />
+      <div class="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 self-start sm:self-auto">
+        <Clock class="w-3.5 h-3.5 text-brand-400" />
         <span>{{ todayLabel }}</span>
       </div>
     </div>
@@ -15,59 +15,59 @@
     <!-- Error alert -->
     <div v-if="error" class="bg-red-950/40 border border-red-500/30 rounded-2xl p-4 flex items-start gap-3">
       <AlertTriangle class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-      <div class="flex-1">
+      <div class="flex-1 min-w-0">
         <p class="text-red-300 font-semibold text-sm">Ma'lumotlarni yuklab bo'lmadi</p>
-        <p class="text-red-400 text-sm mt-1">{{ error }}</p>
+        <p class="text-red-400 text-xs mt-1">{{ error }}</p>
       </div>
-      <button @click="loadDashboard" class="btn-sm btn-outline text-red-300 border-red-500/40 hover:bg-red-500/10">
+      <button @click="loadDashboard" class="btn-sm btn-outline text-red-300 border-red-500/40 hover:bg-red-500/10 text-xs">
         Qayta yuklash
       </button>
     </div>
 
     <!-- KPI Cards -->
-    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-      <div v-for="i in 4" :key="i" class="skeleton h-32 rounded-2xl bg-slate-800" />
+    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div v-for="i in 4" :key="i" class="skeleton h-28 rounded-2xl bg-slate-800" />
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <div
         v-for="card in kpiCards"
         :key="card.label"
-        class="group relative overflow-hidden rounded-2xl border border-slate-700/60 bg-gradient-to-br p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-500"
+        class="group relative overflow-hidden rounded-2xl border border-slate-700/60 bg-gradient-to-br p-4 sm:p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-500 shadow-sm"
         :class="card.cardBg"
       >
         <div class="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 blur-2xl" :class="card.glow" />
-        <div class="flex items-start justify-between mb-4 relative">
-          <p class="text-slate-300 text-sm font-medium">{{ card.label }}</p>
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-sm" :class="card.iconBg">
-            <component :is="card.icon" class="w-5 h-5" :class="card.iconColor" />
+        <div class="flex items-start justify-between mb-3 relative">
+          <p class="text-slate-300 text-xs sm:text-sm font-medium">{{ card.label }}</p>
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center backdrop-blur-sm flex-shrink-0" :class="card.iconBg">
+            <component :is="card.icon" class="w-4.5 h-4.5" :class="card.iconColor" />
           </div>
         </div>
-        <p class="text-[26px] font-bold text-white leading-tight relative">{{ card.value }}</p>
-        <div class="mt-3 flex items-center gap-1.5 text-xs relative">
-          <span :class="card.change > 0 ? 'text-emerald-400' : 'text-red-400'" class="font-semibold">
-            {{ card.change > 0 ? '▲' : '▼' }} {{ Math.abs(card.change) }}%
+        <p class="text-2xl sm:text-[26px] font-bold text-white leading-tight relative truncate">{{ card.value }}</p>
+        <div class="mt-2.5 flex items-center gap-1.5 text-[11px] sm:text-xs relative flex-wrap">
+          <span :class="card.change >= 0 ? 'text-emerald-400' : 'text-red-400'" class="font-semibold whitespace-nowrap">
+            {{ card.change >= 0 ? '▲' : '▼' }} {{ Math.abs(card.change) }}%
           </span>
-          <span class="text-slate-500">bu oy o`tgan oyga nisbatan</span>
+          <span class="text-slate-400 truncate">o'tgan oyga nisbatan</span>
         </div>
       </div>
     </div>
 
     <!-- Charts Row -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       <!-- Sales Chart -->
-      <div class="xl:col-span-2 bg-slate-800/60 rounded-2xl p-6 border border-slate-700/60 backdrop-blur-sm">
-        <div class="flex items-center justify-between mb-6">
+      <div class="lg:col-span-2 bg-slate-800/80 rounded-2xl p-4 sm:p-6 border border-slate-700/70 backdrop-blur-sm shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div>
-            <h2 class="font-bold text-white">Savdo Dinamikasi</h2>
-            <p class="text-slate-500 text-xs mt-0.5">Daromad bo'yicha oylik statistika</p>
+            <h2 class="font-bold text-white text-base sm:text-lg">Savdo Dinamikasi</h2>
+            <p class="text-slate-400 text-xs mt-0.5">Daromad bo'yicha oylik statistika</p>
           </div>
-          <div class="flex gap-1.5 bg-slate-900/60 rounded-xl p-1 border border-slate-700/60">
+          <div class="flex gap-1 bg-slate-900/80 rounded-xl p-1 border border-slate-700/60 self-start sm:self-auto">
             <button
               v-for="opt in chartPeriods"
               :key="opt.value"
               @click="chartPeriod = opt.value"
-              class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-medium transition-colors"
               :class="chartPeriod === opt.value
                 ? 'bg-brand-500/20 text-brand-300 border border-brand-500/40'
                 : 'text-slate-400 hover:text-slate-200 border border-transparent'"
@@ -76,55 +76,55 @@
             </button>
           </div>
         </div>
-        <div class="h-64 relative">
+        <div class="h-60 sm:h-64 relative w-full overflow-hidden">
           <div v-if="chartEmpty" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
             <BarChart3 class="w-8 h-8 mb-2 opacity-40" />
-            <p class="text-sm">Hali savdo ma'lumotlari yo'q</p>
+            <p class="text-xs sm:text-sm">Hali savdo ma'lumotlari yo'q</p>
           </div>
-          <canvas v-show="!chartEmpty" ref="salesChartRef" />
+          <canvas v-show="!chartEmpty" ref="salesChartRef" class="w-full h-full" />
         </div>
       </div>
 
       <!-- Order Status Breakdown -->
-      <div class="bg-slate-800/60 rounded-2xl p-6 border border-slate-700/60 backdrop-blur-sm">
-        <h2 class="font-bold text-white mb-6">Buyurtmalar Holati</h2>
-        <div class="space-y-4">
+      <div class="bg-slate-800/80 rounded-2xl p-4 sm:p-6 border border-slate-700/70 backdrop-blur-sm shadow-sm">
+        <h2 class="font-bold text-white text-base sm:text-lg mb-5">Buyurtmalar Holati</h2>
+        <div class="space-y-3.5">
           <div
             v-for="item in orderStatusData"
             :key="item.label"
             class="flex items-center gap-3 group cursor-pointer"
             @click="filterByStatus(item.status)"
           >
-            <div class="w-3 h-3 rounded-full flex-shrink-0 transition-transform group-hover:scale-125" :style="{ backgroundColor: item.color, boxShadow: `0 0 12px ${item.color}66` }" />
+            <div class="w-2.5 h-2.5 rounded-full flex-shrink-0 transition-transform group-hover:scale-125" :style="{ backgroundColor: item.color, boxShadow: `0 0 12px ${item.color}66` }" />
             <div class="flex-1 min-w-0">
-              <div class="flex justify-between text-sm mb-1.5">
-                <span class="text-slate-300">{{ item.label }}</span>
-                <span class="font-bold text-white">{{ item.count }}</span>
+              <div class="flex justify-between text-xs sm:text-sm mb-1">
+                <span class="text-slate-300 truncate">{{ item.label }}</span>
+                <span class="font-bold text-white ml-2">{{ item.count }}</span>
               </div>
-              <div class="h-2 bg-slate-700/70 rounded-full overflow-hidden">
+              <div class="h-1.5 bg-slate-700/70 rounded-full overflow-hidden">
                 <div
                   class="h-full rounded-full transition-all duration-1000"
                   :style="{ width: item.pct + '%', backgroundColor: item.color }"
                 />
               </div>
             </div>
-            <span class="text-xs text-slate-500 w-9 text-right">{{ item.pct }}%</span>
+            <span class="text-[11px] sm:text-xs text-slate-400 w-8 text-right font-medium">{{ item.pct }}%</span>
           </div>
         </div>
 
-        <div class="mt-6 pt-6 border-t border-slate-700/70">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-slate-500 text-xs">Umumiy buyurtma</p>
-              <p class="text-xl font-bold text-white">{{ totalOrders }}</p>
+        <div class="mt-5 pt-5 border-t border-slate-700/70">
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-slate-900/40 p-2.5 rounded-xl border border-slate-700/40">
+              <p class="text-slate-400 text-[10px] sm:text-xs truncate">Jami</p>
+              <p class="text-base sm:text-lg font-bold text-white mt-0.5">{{ totalOrders }}</p>
             </div>
-            <div class="text-right">
-              <p class="text-slate-500 text-xs">Kutilmoqda</p>
-              <p class="text-xl font-bold text-amber-400">{{ pendingOrders }}</p>
+            <div class="bg-slate-900/40 p-2.5 rounded-xl border border-slate-700/40">
+              <p class="text-slate-400 text-[10px] sm:text-xs truncate">Kutilmoqda</p>
+              <p class="text-base sm:text-lg font-bold text-amber-400 mt-0.5">{{ pendingOrders }}</p>
             </div>
-            <div class="text-right">
-              <p class="text-slate-500 text-xs">Bugun</p>
-              <p class="text-xl font-bold text-brand-400">{{ todayOrders }}</p>
+            <div class="bg-slate-900/40 p-2.5 rounded-xl border border-slate-700/40">
+              <p class="text-slate-400 text-[10px] sm:text-xs truncate">Bugun</p>
+              <p class="text-base sm:text-lg font-bold text-brand-400 mt-0.5">{{ todayOrders }}</p>
             </div>
           </div>
         </div>
@@ -132,21 +132,21 @@
     </div>
 
     <!-- Latest Orders + Top Products -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       <!-- Latest Orders -->
-      <div class="xl:col-span-2 bg-slate-800/60 rounded-2xl p-6 border border-slate-700/60 backdrop-blur-sm">
-        <div class="flex items-center justify-between mb-6">
+      <div class="lg:col-span-2 bg-slate-800/80 rounded-2xl p-4 sm:p-6 border border-slate-700/70 backdrop-blur-sm shadow-sm">
+        <div class="flex items-center justify-between mb-4 sm:mb-5">
           <div>
-            <h2 class="font-bold text-white">So'nggi Buyurtmalar</h2>
-            <p class="text-slate-500 text-xs mt-0.5">Oxirgi 10 ta buyurtma</p>
+            <h2 class="font-bold text-white text-base sm:text-lg">So'nggi Buyurtmalar</h2>
+            <p class="text-slate-400 text-xs mt-0.5">Oxirgi 10 ta buyurtma</p>
           </div>
-          <router-link to="/admin/orders" class="flex items-center gap-1 text-brand-400 text-sm font-medium hover:text-brand-300 transition-colors">
+          <router-link to="/admin/orders" class="flex items-center gap-1 text-brand-400 text-xs sm:text-sm font-medium hover:text-brand-300 transition-colors">
             Barchasi <ChevronRight class="w-4 h-4" />
           </router-link>
         </div>
 
         <div v-if="loadingOrders" class="space-y-3">
-          <div v-for="i in 5" :key="i" class="skeleton h-12 rounded-xl bg-slate-700" />
+          <div v-for="i in 4" :key="i" class="skeleton h-12 rounded-xl bg-slate-700" />
         </div>
 
         <div v-else-if="latestOrders.length === 0" class="py-10 text-center text-slate-500">
@@ -154,39 +154,41 @@
           <p class="text-sm">Hali buyurtmalar yo'q</p>
         </div>
 
-        <div v-else class="overflow-x-auto -mx-2">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-left">
-                <th class="pb-3 px-2 text-slate-500 font-medium text-xs uppercase tracking-wider">Buyurtma #</th>
-                <th class="pb-3 px-2 text-slate-500 font-medium text-xs uppercase tracking-wider">Mijoz</th>
-                <th class="pb-3 px-2 text-slate-500 font-medium text-xs uppercase tracking-wider">Summa</th>
-                <th class="pb-3 px-2 text-slate-500 font-medium text-xs uppercase tracking-wider">Holat</th>
-                <th class="pb-3 px-2 text-slate-500 font-medium text-xs uppercase tracking-wider">Sana</th>
-                <th class="pb-3 px-2" />
+        <div v-else class="overflow-x-auto w-full rounded-xl">
+          <table class="w-full text-sm text-left min-w-[560px]">
+            <thead class="bg-slate-900/60 border-b border-slate-700/70">
+              <tr>
+                <th class="py-2.5 px-3 text-slate-400 font-medium text-xs uppercase tracking-wider whitespace-nowrap">Buyurtma #</th>
+                <th class="py-2.5 px-3 text-slate-400 font-medium text-xs uppercase tracking-wider whitespace-nowrap">Mijoz</th>
+                <th class="py-2.5 px-3 text-slate-400 font-medium text-xs uppercase tracking-wider whitespace-nowrap">Summa</th>
+                <th class="py-2.5 px-3 text-slate-400 font-medium text-xs uppercase tracking-wider whitespace-nowrap">Holat</th>
+                <th class="py-2.5 px-3 text-slate-400 font-medium text-xs uppercase tracking-wider whitespace-nowrap">Sana</th>
+                <th class="py-2.5 px-3 text-right whitespace-nowrap" />
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-700/60">
               <tr v-for="order in latestOrders" :key="order.id" class="hover:bg-slate-700/30 transition-colors group">
-                <td class="py-3 px-2 font-bold text-brand-400">#{{ order.order_number }}</td>
-                <td class="py-3 px-2 text-slate-300">{{ order.user_full_name || order.user_name }}</td>
-                <td class="py-3 px-2 text-white font-medium whitespace-nowrap">
+                <td class="py-3 px-3 font-bold text-brand-400 whitespace-nowrap">#{{ order.order_number }}</td>
+                <td class="py-3 px-3 text-slate-300">
+                  <span class="truncate block max-w-[130px]">{{ order.user_full_name || order.user_name }}</span>
+                </td>
+                <td class="py-3 px-3 text-white font-medium whitespace-nowrap">
                   <span class="inline-flex items-center gap-1.5 text-slate-200">
                     {{ formatPrice(order.total_amount) }}
                   </span>
                 </td>
-                <td class="py-3 px-2">
-                  <span class="badge inline-flex items-center gap-1.5" :class="statusBadgeClass(order.status)">
+                <td class="py-3 px-3 whitespace-nowrap">
+                  <span class="badge text-[10px] font-medium inline-flex items-center gap-1.5" :class="statusBadgeClass(order.status)">
                     <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass(order.status)" />
                     {{ statusLabel(order.status) }}
                   </span>
                 </td>
-                <td class="py-3 px-2 text-slate-500 text-xs">{{ formatDate(order.created_at) }}</td>
-                <td class="py-3 px-2">
+                <td class="py-3 px-3 text-slate-400 text-xs whitespace-nowrap">{{ formatDate(order.created_at) }}</td>
+                <td class="py-3 px-3 text-right whitespace-nowrap">
                   <select
                     :value="order.status"
                     @change="updateStatus(order, $event.target.value)"
-                    class="bg-slate-900/80 text-slate-300 border border-slate-600/70 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-brand-500/60 cursor-pointer"
+                    class="bg-slate-900/80 text-slate-300 border border-slate-600/70 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-brand-500/60 cursor-pointer"
                     :id="`order-status-${order.id}`"
                   >
                     <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
@@ -199,39 +201,39 @@
       </div>
 
       <!-- Top Products -->
-      <div class="bg-slate-800/60 rounded-2xl p-6 border border-slate-700/60 backdrop-blur-sm">
-        <h2 class="font-bold text-white mb-6">Top Mahsulotlar</h2>
+      <div class="bg-slate-800/80 rounded-2xl p-4 sm:p-6 border border-slate-700/70 backdrop-blur-sm shadow-sm">
+        <h2 class="font-bold text-white text-base sm:text-lg mb-4 sm:mb-5">Top Mahsulotlar</h2>
         <div v-if="!topProducts.length" class="py-10 text-center text-slate-500">
           <Package class="w-8 h-8 mx-auto mb-3 opacity-40" />
           <p class="text-sm">Hali sotilgan mahsulotlar yo'q</p>
         </div>
-        <div v-else class="space-y-4">
+        <div v-else class="space-y-3">
           <div
             v-for="(product, index) in topProducts"
             :key="product.product__id"
-            class="flex items-center gap-3 p-3 rounded-xl border border-slate-700/50 bg-slate-900/30 hover:border-slate-600 transition-colors"
+            class="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border border-slate-700/50 bg-slate-900/30 hover:border-slate-600 transition-colors"
           >
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0"
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0"
               :class="['bg-brand-500/20 text-brand-300', 'bg-purple-500/20 text-purple-300', 'bg-amber-500/20 text-amber-300'][index % 3]">
               {{ index + 1 }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-white truncate">{{ product.product__name }}</p>
-              <p class="text-xs text-slate-500">{{ product.total_qty }} dona sotilgan</p>
+              <p class="text-xs sm:text-sm font-medium text-white truncate">{{ product.product__name }}</p>
+              <p class="text-[11px] text-slate-400 truncate">{{ product.total_qty }} dona sotilgan</p>
             </div>
-            <p class="text-sm font-semibold text-emerald-400 whitespace-nowrap">{{ formatPrice(product.total_revenue) }}</p>
+            <p class="text-xs sm:text-sm font-semibold text-emerald-400 whitespace-nowrap">{{ formatPrice(product.total_revenue) }}</p>
           </div>
         </div>
 
-        <div class="mt-6 pt-6 border-t border-slate-700/70">
+        <div class="mt-5 pt-5 border-t border-slate-700/70">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-slate-500 text-xs">Oylik daromad</p>
-              <p class="text-lg font-bold text-emerald-400">{{ formatPrice(monthlyRevenue) }}</p>
+              <p class="text-slate-400 text-xs">Oylik daromad</p>
+              <p class="text-base sm:text-lg font-bold text-emerald-400 mt-0.5">{{ formatPrice(monthlyRevenue) }}</p>
             </div>
             <div class="text-right">
-              <p class="text-slate-500 text-xs">Faol mahsulotlar</p>
-              <p class="text-lg font-bold text-white">{{ totalProducts }}</p>
+              <p class="text-slate-400 text-xs">Faol mahsulotlar</p>
+              <p class="text-base sm:text-lg font-bold text-white mt-0.5">{{ totalProducts }}</p>
             </div>
           </div>
         </div>

@@ -1,33 +1,33 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex items-center justify-between flex-wrap gap-4">
+  <div class="space-y-5 max-w-full overflow-hidden">
+    <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-white">Buyurtmalar Boshqaruvi</h1>
-        <p class="text-slate-400 text-sm mt-1">{{ totalCount }} ta buyurtma</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-white">Buyurtmalar Boshqaruvi</h1>
+        <p class="text-slate-400 text-xs sm:text-sm mt-0.5">{{ totalCount }} ta buyurtma</p>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 flex flex-wrap gap-3">
-      <div class="flex-1 min-w-[200px] relative">
+    <div class="bg-slate-800/90 rounded-2xl p-3 sm:p-4 border border-slate-700/80 flex flex-col gap-3">
+      <div class="w-full relative">
         <input
           v-model="search"
           @input="debounceFetch"
           type="text"
-          placeholder="Buyurtma # yoki mijoz..."
-          class="bg-slate-700 text-slate-200 border border-slate-600 rounded-xl px-4 py-2.5 pl-10 w-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          placeholder="Buyurtma # yoki mijoz ismi/telefoni..."
+          class="bg-slate-700/80 text-slate-200 placeholder-slate-400 border border-slate-600 rounded-xl px-4 py-2.5 pl-10 w-full text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
       </div>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap w-full scrollbar-none">
         <button
           v-for="s in ['all', ...statusOptions.map(s => s.value)]"
           :key="s"
           @click="filterStatus = s; fetchOrders()"
-          class="px-4 py-2 rounded-xl text-sm font-medium transition-all"
+          class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0"
           :class="filterStatus === s
-            ? 'bg-brand-600 text-white'
-            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'"
+            ? 'bg-brand-600 text-white shadow-sm'
+            : 'bg-slate-700/80 text-slate-300 hover:bg-slate-600 hover:text-white'"
         >
           {{ s === 'all' ? 'Barchasi' : statusOptions.find(o => o.value === s)?.label }}
         </button>
@@ -35,67 +35,67 @@
     </div>
 
     <!-- Table -->
-    <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-      <div v-if="loading" class="p-6 space-y-3">
-        <div v-for="i in 6" :key="i" class="skeleton h-14 rounded-xl bg-slate-700" />
+    <div class="bg-slate-800/90 rounded-2xl border border-slate-700/80 overflow-hidden shadow-sm">
+      <div v-if="loading" class="p-4 sm:p-6 space-y-3">
+        <div v-for="i in 5" :key="i" class="skeleton h-14 rounded-xl bg-slate-700" />
       </div>
 
-      <div v-else-if="!orders.length" class="py-16 text-center">
+      <div v-else-if="!orders.length" class="py-16 text-center px-4">
         <ShoppingBag class="w-12 h-12 text-slate-600 mx-auto mb-3" />
-        <p class="text-slate-400">Buyurtmalar topilmadi</p>
+        <p class="text-slate-400 text-sm">Buyurtmalar topilmadi</p>
       </div>
 
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-900/50">
+      <div v-else class="overflow-x-auto w-full">
+        <table class="w-full text-sm text-left min-w-[700px]">
+          <thead class="bg-slate-900/60 border-b border-slate-700/80">
             <tr>
-              <th v-for="col in columns" :key="col" class="text-left px-4 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">
+              <th v-for="col in columns" :key="col" class="px-4 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider whitespace-nowrap">
                 {{ col }}
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-700">
+          <tbody class="divide-y divide-slate-700/60">
             <template v-for="order in orders" :key="order.id">
               <!-- Order Row -->
               <tr
                 @click="toggleDetail(order)"
-                class="hover:bg-slate-700/50 transition-colors cursor-pointer"
+                class="hover:bg-slate-700/40 transition-colors cursor-pointer"
                 :class="expandedId === order.id ? 'bg-brand-900/10' : ''"
               >
-                <td class="px-4 py-4 font-bold text-brand-400">#{{ order.order_number }}</td>
-                <td class="px-4 py-4">
-                  <div>
-                    <p class="text-slate-200 font-medium">{{ order.user_full_name }}</p>
-                    <p class="text-slate-500 text-xs">{{ order.user_phone }}</p>
+                <td class="px-4 py-3.5 font-bold text-brand-400 whitespace-nowrap">#{{ order.order_number }}</td>
+                <td class="px-4 py-3.5">
+                  <div class="min-w-[130px]">
+                    <p class="text-slate-200 font-medium truncate">{{ order.user_full_name }}</p>
+                    <p class="text-slate-500 text-xs truncate">{{ order.user_phone }}</p>
                   </div>
                 </td>
-                <td class="px-4 py-4 text-slate-300">
+                <td class="px-4 py-3.5 text-slate-300 whitespace-nowrap">
                   <div class="flex items-center gap-1.5 text-xs text-slate-400">
-                    <MapPin class="w-3.5 h-3.5" />
-                    {{ order.delivery_address?.region || '—' }}
+                    <MapPin class="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                    <span>{{ order.delivery_address?.region || '—' }}</span>
                   </div>
                 </td>
-                <td class="px-4 py-4 font-semibold text-white">{{ formatPrice(order.total_amount) }}</td>
-                <td class="px-4 py-4">
-                  <span class="badge" :class="statusBadge(order.status)">{{ statusLabel(order.status) }}</span>
+                <td class="px-4 py-3.5 font-semibold text-white whitespace-nowrap">{{ formatPrice(order.total_amount) }}</td>
+                <td class="px-4 py-3.5 whitespace-nowrap">
+                  <span class="badge text-[10px] font-semibold" :class="statusBadge(order.status)">{{ statusLabel(order.status) }}</span>
                 </td>
-                <td class="px-4 py-4 text-slate-400 text-xs">{{ formatDate(order.created_at) }}</td>
-                <td class="px-4 py-4" @click.stop>
-                  <div class="flex items-center gap-2">
+                <td class="px-4 py-3.5 text-slate-400 text-xs whitespace-nowrap">{{ formatDate(order.created_at) }}</td>
+                <td class="px-4 py-3.5 text-right whitespace-nowrap" @click.stop>
+                  <div class="flex items-center justify-end gap-1.5">
                     <select
                       :value="order.status"
                       @change="updateStatus(order, $event.target.value)"
-                      class="bg-slate-700 text-slate-300 border border-slate-600 rounded-lg px-2 py-1 text-xs"
+                      class="bg-slate-700/90 text-slate-200 border border-slate-600 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
                       :id="`admin-order-status-${order.id}`"
                     >
                       <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
                     </select>
                     <button
                       @click="toggleDetail(order)"
-                      class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-700 hover:bg-brand-700 text-slate-400 hover:text-white transition-all"
+                      class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-slate-700/80 hover:bg-brand-600 text-slate-400 hover:text-white transition-all"
                       :title="expandedId === order.id ? 'Yopish' : 'Batafsil'"
                     >
-                      <ChevronDown class="w-4 h-4 transition-transform" :class="expandedId === order.id ? 'rotate-180' : ''" />
+                      <ChevronDown class="w-4 h-4 transition-transform duration-200" :class="expandedId === order.id ? 'rotate-180' : ''" />
                     </button>
                   </div>
                 </td>
@@ -103,13 +103,13 @@
 
               <!-- Expanded Detail Row -->
               <tr v-if="expandedId === order.id" class="bg-slate-900/40">
-                <td colspan="7" class="px-4 pb-5 pt-1">
+                <td colspan="7" class="px-3.5 sm:px-4 pb-5 pt-2">
                   <div v-if="detailLoading" class="flex items-center gap-3 py-4">
                     <div class="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                     <span class="text-slate-400 text-sm">Yuklanmoqda...</span>
                   </div>
 
-                  <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mt-1">
                     <!-- Customer + Address -->
                     <div class="space-y-3">
                       <!-- Customer -->

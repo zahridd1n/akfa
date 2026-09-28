@@ -1,61 +1,66 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex items-center justify-between flex-wrap gap-4">
+  <div class="space-y-5 max-w-full overflow-hidden">
+    <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-white">Mijozlar Ro'yxati</h1>
-        <p class="text-slate-400 text-sm mt-1">{{ customers.length }} ta mijoz</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-white">Mijozlar Ro'yxati</h1>
+        <p class="text-slate-400 text-xs sm:text-sm mt-0.5">{{ totalCount || customers.length }} ta mijoz</p>
       </div>
     </div>
 
     <!-- Search & Stats -->
-    <div class="flex flex-wrap gap-4">
-      <div class="flex-1 min-w-[280px] bg-slate-800 rounded-2xl p-4 border border-slate-700">
-        <div class="relative">
-          <input v-model="search" @input="debounceFetch" type="text" placeholder="Ism, telefon yoki email bo'yicha qidirish..."
-                 class="bg-slate-700 text-slate-200 border border-slate-600 rounded-xl px-4 py-2.5 pl-10 w-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+    <div class="flex flex-col md:flex-row gap-3">
+      <div class="flex-1 w-full bg-slate-800/90 rounded-2xl p-3 sm:p-4 border border-slate-700/80">
+        <div class="relative w-full">
+          <input
+            v-model="search"
+            @input="debounceFetch"
+            type="text"
+            placeholder="Ism, telefon yoki email bo'yicha qidirish..."
+            class="bg-slate-700/80 text-slate-200 placeholder-slate-400 border border-slate-600 rounded-xl px-4 py-2.5 pl-10 w-full text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         </div>
       </div>
       <!-- Quick stat cards -->
-      <div class="flex gap-3 flex-wrap">
-        <div class="bg-slate-800 rounded-2xl px-5 py-3 border border-slate-700 flex items-center gap-3">
-          <div class="w-8 h-8 bg-purple-500/15 rounded-lg flex items-center justify-center">
+      <div class="grid grid-cols-2 sm:flex gap-2.5 sm:gap-3 w-full md:w-auto">
+        <div class="bg-slate-800/90 rounded-2xl p-3 sm:px-5 sm:py-3.5 border border-slate-700/80 flex items-center gap-3 flex-1">
+          <div class="w-8 h-8 bg-purple-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
             <Users class="w-4 h-4 text-purple-400" />
           </div>
-          <div>
-            <p class="text-slate-500 text-xs">Jami mijozlar</p>
-            <p class="text-white font-bold text-lg leading-none mt-0.5">{{ totalCount || customers.length }}</p>
+          <div class="min-w-0">
+            <p class="text-slate-400 text-[11px] leading-tight truncate">Jami mijozlar</p>
+            <p class="text-white font-bold text-base sm:text-lg leading-none mt-1">{{ totalCount || customers.length }}</p>
           </div>
         </div>
-        <div class="bg-slate-800 rounded-2xl px-5 py-3 border border-slate-700 flex items-center gap-3">
-          <div class="w-8 h-8 bg-emerald-500/15 rounded-lg flex items-center justify-center">
+        <div class="bg-slate-800/90 rounded-2xl p-3 sm:px-5 sm:py-3.5 border border-slate-700/80 flex items-center gap-3 flex-1">
+          <div class="w-8 h-8 bg-emerald-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
             <TrendingUp class="w-4 h-4 text-emerald-400" />
           </div>
-          <div>
-            <p class="text-slate-500 text-xs">Faol (buyurtma bor)</p>
-            <p class="text-white font-bold text-lg leading-none mt-0.5">{{ activeCount }}</p>
+          <div class="min-w-0">
+            <p class="text-slate-400 text-[11px] leading-tight truncate">Faol mijozlar</p>
+            <p class="text-white font-bold text-base sm:text-lg leading-none mt-1">{{ activeCount }}</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Table -->
-    <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-      <div v-if="loading" class="p-6 space-y-3">
-        <div v-for="i in 6" :key="i" class="skeleton h-16 rounded-xl bg-slate-700" />
+    <div class="bg-slate-800/90 rounded-2xl border border-slate-700/80 overflow-hidden shadow-sm">
+      <div v-if="loading" class="p-4 sm:p-6 space-y-3">
+        <div v-for="i in 5" :key="i" class="skeleton h-14 rounded-xl bg-slate-700" />
       </div>
       <div v-else-if="!customers.length" class="py-16 text-center">
         <Users class="w-12 h-12 text-slate-600 mx-auto mb-3" />
-        <p class="text-slate-400">Mijozlar topilmadi</p>
+        <p class="text-slate-400 text-sm">Mijozlar topilmadi</p>
       </div>
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-900/50">
+      <div v-else class="overflow-x-auto w-full">
+        <table class="w-full text-sm text-left min-w-[640px]">
+          <thead class="bg-slate-900/60 border-b border-slate-700/80">
             <tr>
-              <th v-for="col in columns" :key="col" class="text-left px-4 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider">{{ col }}</th>
+              <th v-for="col in columns" :key="col" class="px-4 py-3 text-slate-400 font-medium text-xs uppercase tracking-wider whitespace-nowrap">{{ col }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-700">
+          <tbody class="divide-y divide-slate-700/60">
             <template v-for="c in customers" :key="c.id">
               <!-- Main row -->
               <tr
@@ -64,64 +69,64 @@
                 :class="expandedId === c.id ? 'bg-brand-900/10' : ''"
               >
                 <!-- Avatar + Name -->
-                <td class="px-4 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                <td class="px-4 py-3.5">
+                  <div class="flex items-center gap-3 min-w-[140px]">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
                          :class="c.orders_count > 0 ? 'bg-brand-900 text-brand-400' : 'bg-slate-700 text-slate-400'">
                       {{ c.full_name?.charAt(0)?.toUpperCase() || '?' }}
                     </div>
-                    <div>
-                      <p class="font-semibold text-white">{{ c.full_name || '—' }}</p>
-                      <p v-if="c.email" class="text-slate-500 text-xs mt-0.5">{{ c.email }}</p>
+                    <div class="min-w-0">
+                      <p class="font-semibold text-white truncate max-w-[150px]">{{ c.full_name || '—' }}</p>
+                      <p v-if="c.email" class="text-slate-500 text-xs truncate max-w-[150px]">{{ c.email }}</p>
                     </div>
                   </div>
                 </td>
                 <!-- Phone -->
-                <td class="px-4 py-4">
+                <td class="px-4 py-3.5 whitespace-nowrap">
                   <div class="flex items-center gap-1.5 text-slate-300">
                     <Phone class="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                    {{ c.phone_number || '—' }}
+                    <span>{{ c.phone_number || '—' }}</span>
                   </div>
                 </td>
                 <!-- Orders count -->
-                <td class="px-4 py-4">
+                <td class="px-4 py-3.5 whitespace-nowrap">
                   <div class="flex items-center gap-2">
                     <span class="text-white font-semibold">{{ c.orders_count || 0 }}</span>
                     <span
                       v-if="c.orders_count > 0"
-                      class="text-xs px-2 py-0.5 rounded-full"
-                      :class="c.orders_count >= 5 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-brand-900/50 text-brand-400'"
+                      class="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      :class="c.orders_count >= 5 ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' : 'bg-brand-900/50 text-brand-400 border border-brand-500/30'"
                     >
                       {{ c.orders_count >= 5 ? 'Doimiy' : 'Yangi' }}
                     </span>
                   </div>
                 </td>
                 <!-- Total spent -->
-                <td class="px-4 py-4">
+                <td class="px-4 py-3.5 whitespace-nowrap">
                   <div>
                     <p class="font-semibold text-brand-400">{{ formatPrice(c.total_spent) }}</p>
-                    <p v-if="c.avg_order_value" class="text-xs text-slate-500 mt-0.5">
+                    <p v-if="c.avg_order_value" class="text-[11px] text-slate-500 mt-0.5">
                       o'rtacha: {{ formatPrice(c.avg_order_value) }}
                     </p>
                   </div>
                 </td>
                 <!-- Last order -->
-                <td class="px-4 py-4">
+                <td class="px-4 py-3.5 whitespace-nowrap">
                   <div v-if="c.last_order_date">
                     <p class="text-slate-300 text-xs">{{ formatDate(c.last_order_date) }}</p>
-                    <span v-if="c.last_order_status" class="text-xs mt-0.5 inline-block px-2 py-0.5 rounded-full"
+                    <span v-if="c.last_order_status" class="text-[10px] mt-0.5 inline-block px-2 py-0.5 rounded-full font-medium"
                           :class="statusBadgeSmall(c.last_order_status)">
                       {{ statusLabel(c.last_order_status) }}
                     </span>
                   </div>
-                  <p v-else class="text-slate-600 text-xs">—</p>
+                  <p v-else class="text-slate-500 text-xs">—</p>
                 </td>
                 <!-- Join date -->
-                <td class="px-4 py-4 text-slate-400 text-xs">{{ formatDate(c.date_joined) }}</td>
+                <td class="px-4 py-3.5 text-slate-400 text-xs whitespace-nowrap">{{ formatDate(c.date_joined) }}</td>
                 <!-- Expand button -->
-                <td class="px-4 py-4">
-                  <button class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-700 hover:bg-brand-700 text-slate-400 hover:text-white transition-all">
-                    <ChevronDown class="w-4 h-4 transition-transform" :class="expandedId === c.id ? 'rotate-180' : ''" />
+                <td class="px-4 py-3.5 text-right whitespace-nowrap">
+                  <button class="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-slate-700/80 hover:bg-brand-600 text-slate-400 hover:text-white transition-all">
+                    <ChevronDown class="w-4 h-4 transition-transform duration-200" :class="expandedId === c.id ? 'rotate-180' : ''" />
                   </button>
                 </td>
               </tr>
