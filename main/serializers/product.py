@@ -1,4 +1,4 @@
-﻿from rest_framework import serializers
+from rest_framework import serializers
 from ..models import Category, Product, ProductImage, ProductColor
 
 
@@ -9,9 +9,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductColorSerializer(serializers.ModelSerializer):
+    price = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
+    calculated_price = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductColor
-        fields = ['id', 'name', 'hex_code', 'price_modifier', 'is_available']
+        fields = ['id', 'name', 'hex_code', 'price', 'price_modifier', 'calculated_price', 'is_available']
+
+    def get_calculated_price(self, obj):
+        return round(obj.get_effective_price(), 2)
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -24,6 +30,9 @@ class ProductListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     main_image = serializers.SerializerMethodField()
     colors_count = serializers.IntegerField(source='colors.count', read_only=True)
+    colors = ProductColorSerializer(many=True, read_only=True)
+    min_price = serializers.SerializerMethodField()
+    max_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -32,7 +41,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'material', 'design_style',
             'base_price', 'price_type',
             'badge', 'status',
-            'main_image', 'colors_count',
+            'main_image', 'colors_count', 'colors',
+            'min_price', 'max_price',
         ]
 
     def get_main_image(self, obj):
@@ -41,6 +51,18 @@ class ProductListSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             return request.build_absolute_uri(img.image.url) if request else img.image.url
         return None
+
+    def get_min_price(self, obj):
+        colors = obj.colors.filter(is_available=True)
+        if colors.exists():
+            return round(min(c.get_effective_price() for c in colors), 2)
+        return round(float(obj.base_price), 2)
+
+    def get_max_price(self, obj):
+        colors = obj.colors.filter(is_available=True)
+        if colors.exists():
+            return round(max(c.get_effective_price() for c in colors), 2)
+        return round(float(obj.base_price), 2)
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):

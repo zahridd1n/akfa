@@ -20,6 +20,7 @@ export const adminApi = {
   deleteProductImage: (id, imgId) => api.delete(`/admin-panel/products/${id}/images/${imgId}/`),
   setProductMainImage: (id, imgId) => api.put(`/admin-panel/products/${id}/images/${imgId}/set_main/`),
   addProductColor: (id, data) => api.post(`/admin-panel/products/${id}/colors/`, data),
+  updateProductColor: (id, colorId, data) => api.patch(`/admin-panel/products/${id}/colors/${colorId}/`, data),
   deleteProductColor: (id, colorId) => api.delete(`/admin-panel/products/${id}/colors/${colorId}/`),
 
   // Orders
@@ -32,10 +33,13 @@ export const adminApi = {
 
   // Reports
   getReports: (params = {}) => api.get('/admin-panel/reports/', { params }),
-  exportReports: (params = {}) => api.get('/admin-panel/reports/export/', {
-    params,
-    responseType: 'blob',
-  }),
+  exportReports: (params = {}) => {
+    const fmt = params.format || params.export_format || 'excel'
+    return api.get('/admin-panel/reports/export/', {
+      params: { ...params, format: fmt, export_format: fmt },
+      responseType: 'blob',
+    })
+  },
 
   // Site settings
   getSiteSettings: () => api.get('/admin-panel/site-settings/'),

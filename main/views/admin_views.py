@@ -1,11 +1,12 @@
-﻿from datetime import date, timedelta
+from datetime import date, timedelta
 from io import BytesIO
 from django.db.models import Count, Sum, Q
 from django.http import HttpResponse
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes, renderer_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
@@ -559,7 +560,8 @@ def admin_order_status(request, order_id):
     tags=["🛡️ Admin"],
     summary="[Admin] Mijozlar ro'yxati",
     description="""
-Barcha mijozlarni ko'rsatadi (faqat ole=client foydalanuvchilar).
+Barcha mijozlarni ko'rsatadi (faqat 
+ole=client foydalanuvchilar).
 
 Har bir mijoz uchun ko'rsatiladi:
 - Shaxsiy ma'lumotlar (ism, telefon)
@@ -604,13 +606,55 @@ def admin_customers_list(request):
 # ─────────────────────────────────────────
 # Hisobotlar
 # ─────────────────────────────────────────
+class ExcelRenderer(BaseRenderer):
+    media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    format = "excel"
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
+
+
+class WordRenderer(BaseRenderer):
+    media_type = "application/msword"
+    format = "word"
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
+
+
+class DocxRenderer(BaseRenderer):
+    media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    format = "docx"
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
+
+
+class XlsxRenderer(BaseRenderer):
+    media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    format = "xlsx"
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
+
+
 def _filter_orders_by_date(qs, request):
     date_from = request.GET.get("date_from")
     date_to = request.GET.get("date_to")
     if date_from:
-        qs = qs.filter(created_at__date__gte=date_from)
+        date_from = str(date_from).strip()
+        if date_from and date_from not in ("null", "undefined"):
+            try:
+                qs = qs.filter(created_at__date__gte=date_from)
+            except Exception:
+                pass
     if date_to:
-        qs = qs.filter(created_at__date__lte=date_to)
+        date_to = str(date_to).strip()
+        if date_to and date_to not in ("null", "undefined"):
+            try:
+                qs = qs.filter(created_at__date__lte=date_to)
+            except Exception:
+                pass
     return qs
 
 
@@ -675,7 +719,7 @@ def admin_reports_list(request):
     })
 
 
-def _build_excel_export(qs, status_counts):
+def _build_excel_export(qs, status_counts=None):
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -683,8 +727,8 @@ def _build_excel_export(qs, status_counts):
     ws = wb.active
     ws.title = "Hisobot"
 
-    header_font = Font(bold=True, color="FFFFFF", size=12)
-    header_fill = PatternFill(start_color="2F80ED", end_color="2F80ED", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
     thin_border = Border(
         left=Side(style="thin", color="D1D5DB"),
         right=Side(style="thin", color="D1D5DB"),
@@ -695,51 +739,68 @@ def _build_excel_export(qs, status_counts):
     ws.merge_cells("A1:F1")
     ws["A1"] = "SARAMAX — Sotuv hisoboti"
     ws["A1"].font = Font(bold=True, size=16, color="1F2937")
-    ws["A1"].alignment = Alignment(horizontal="center")
-    ws.merge_cells("A2:F2")
-    ws["A2"] = "Yaratilgan sana: " + date.today().strftime("%d.%m.%Y")
-    ws["A2"].alignment = Alignment(horizontal="center")
+    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 30
 
+    ws.merge_cells("A2:F2")
+    ws["A2"] = f"Yaratilgan sana: {date.today().strftime('%d.%m.%Y')}"
+    ws["A2"].font = Font(italic=True, size=10, color="6B7280")
+    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[2].height = 20
+
+    # Row 3 is empty separator
+    ws.row_dimensions[3].height = 10
+
+    # Row 4 is Headers
     headers = ["Buyurtma #", "Mijoz", "Telefon", "Summa (so'm)", "Holat", "Sana"]
-    ws.append([])
-    ws.append(headers)
-    for cell in ws[3]:
+    for col_idx, h in enumerate(headers, start=1):
+        cell = ws.cell(row=4, column=col_idx, value=h)
         cell.font = header_font
         cell.fill = header_fill
         cell.border = thin_border
-        cell.alignment = Alignment(horizontal="center")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[4].height = 25
 
-    row = 4
+    current_row = 5
     for order in qs:
-        ism = order.user.full_name if order.user else "—"
+        ism = order.user.full_name if (order.user and order.user.full_name) else "—"
         telefon = order.user.phone_number if order.user else "—"
-        ws.append([
-            order.order_number,
-            ism,
-            telefon,
-            float(order.total_amount),
-            order.get_status_display(),
-            order.created_at.strftime("%d.%m.%Y %H:%M"),
-        ])
-        for cell in ws[row]:
+        amount = float(order.total_amount)
+        status_disp = order.get_status_display()
+        sana = order.created_at.strftime("%d.%m.%Y %H:%M") if order.created_at else "—"
+
+        row_values = [order.order_number, ism, telefon, amount, status_disp, sana]
+        for col_idx, val in enumerate(row_values, start=1):
+            cell = ws.cell(row=current_row, column=col_idx, value=val)
             cell.border = thin_border
-        ws.cell(row=row, column=4).number_format = "#,##0"
-        row += 1
+            if col_idx == 4:
+                cell.number_format = "#,##0"
+                cell.alignment = Alignment(horizontal="right")
+            elif col_idx in (1, 3, 5, 6):
+                cell.alignment = Alignment(horizontal="center")
+        current_row += 1
 
-    total_row = row + 1
-    ws.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=3)
-    ws.cell(row=total_row, column=1, value="JAMI")
-    ws.cell(row=total_row, column=1).font = Font(bold=True, size=12)
-    ws.cell(row=total_row, column=4, value=float(qs.aggregate(t=Sum("total_amount"))["t"] or 0))
-    ws.cell(row=total_row, column=4).font = Font(bold=True, size=12)
-    ws.cell(row=total_row, column=4).number_format = "#,##0"
+    total_amount = float(qs.aggregate(t=Sum("total_amount"))["t"] or 0)
+    ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
+    c_label = ws.cell(row=current_row, column=1, value="JAMI")
+    c_label.font = Font(bold=True, size=12)
+    c_label.alignment = Alignment(horizontal="right")
+    c_label.border = thin_border
 
-    ws.column_dimensions["A"].width = 14
+    c_sum = ws.cell(row=current_row, column=4, value=total_amount)
+    c_sum.font = Font(bold=True, size=12, color="1E40AF")
+    c_sum.number_format = "#,##0"
+    c_sum.border = thin_border
+
+    for col in (2, 3, 5, 6):
+        ws.cell(row=current_row, column=col).border = thin_border
+
+    ws.column_dimensions["A"].width = 16
     ws.column_dimensions["B"].width = 28
     ws.column_dimensions["C"].width = 20
-    ws.column_dimensions["D"].width = 18
+    ws.column_dimensions["D"].width = 20
     ws.column_dimensions["E"].width = 18
-    ws.column_dimensions["F"].width = 20
+    ws.column_dimensions["F"].width = 22
 
     buf = BytesIO()
     wb.save(buf)
@@ -750,24 +811,41 @@ def _build_excel_export(qs, status_counts):
 def _build_word_export(qs):
     html_rows = "".join(
         f"<tr>"
-        f"<td>{o.order_number}</td>"
-        f"<td>{o.user.full_name if o.user else '—'}</td>"
-        f"<td>{o.user.phone_number if o.user else '—'}</td>"
-        f"<td align='right'>{float(o.total_amount):,.0f}</td>"
-        f"<td>{o.get_status_display()}</td>"
-        f"<td>{o.created_at.strftime('%d.%m.%Y')}</td>"
+        f"<td style='padding:6px 10px;text-align:center;'>{o.order_number}</td>"
+        f"<td style='padding:6px 10px;'>{o.user.full_name if (o.user and o.user.full_name) else '—'}</td>"
+        f"<td style='padding:6px 10px;text-align:center;'>{o.user.phone_number if o.user else '—'}</td>"
+        f"<td style='padding:6px 10px;text-align:right;'><b>{float(o.total_amount):,.0f} so'm</b></td>"
+        f"<td style='padding:6px 10px;text-align:center;'>{o.get_status_display()}</td>"
+        f"<td style='padding:6px 10px;text-align:center;'>{o.created_at.strftime('%d.%m.%Y %H:%M') if o.created_at else '—'}</td>"
         f"</tr>"
         for o in qs
     )
-    total = qs.aggregate(t=Sum("total_amount"))["t"] or 0
-    html = f"""<html><head><meta charset="utf-8"></head><body>
-    <h2 style="text-align:center">SARAMAX — Sotuv hisoboti</h2>
-    <p style="text-align:center">Yaratilgan sana: {date.today().strftime('%d.%m.%Y')}</p>
-    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
-    <tr style="background:#2F80ED;color:#fff">
-      <th>Buyurtma #</th><th>Mijoz</th><th>Telefon</th><th>Summa (so'm)</th><th>Holat</th><th>Sana</th>
-    </tr>{html_rows}
-    <tr><td colspan="3"><b>JAMI</b></td><td align="right"><b>{float(total):,.0f}</b></td><td colspan="2"></td></tr>
+    total = float(qs.aggregate(t=Sum("total_amount"))["t"] or 0)
+    html = f"""<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset="utf-8"><title>Saramax Hisobot</title>
+    <style>
+      body {{ font-family: Calibri, Arial, sans-serif; margin: 20px; }}
+      table {{ border-collapse: collapse; width: 100%; margin-top: 15px; font-size: 11pt; }}
+      th {{ background-color: #1E40AF; color: #ffffff; padding: 8px 10px; text-align: center; }}
+      td {{ border: 1px solid #D1D5DB; }}
+    </style>
+    </head><body>
+    <h2 style="text-align:center;color:#1F2937;margin-bottom:4px;">SARAMAX — Sotuv hisoboti</h2>
+    <p style="text-align:center;color:#6B7280;margin-top:0;font-size:10pt;">Yaratilgan sana: {date.today().strftime('%d.%m.%Y')}</p>
+    <table>
+    <thead>
+    <tr>
+      <th>Buyurtma #</th><th>Mijoz</th><th>Telefon</th><th>Summa</th><th>Holat</th><th>Sana</th>
+    </tr>
+    </thead>
+    <tbody>
+    {html_rows}
+    <tr style="background:#F3F4F6;">
+      <td colspan="3" style="padding:8px 10px;text-align:right;"><b>JAMI:</b></td>
+      <td style="padding:8px 10px;text-align:right;color:#1E40AF;"><b>{total:,.0f} so'm</b></td>
+      <td colspan="2"></td>
+    </tr>
+    </tbody>
     </table></body></html>"""
     buf = BytesIO()
     buf.write(html.encode("utf-8"))
@@ -784,7 +862,7 @@ Hisobotni Excel (.xlsx) yoki Word (.doc) formatida yuklab olish.
 **Parametrlar:**
 - date_from — Boshlanish sanasi (YYYY-MM-DD)
 - date_to — Tugash sanasi (YYYY-MM-DD)
-- format — `excel` yoki `word` (default: excel)
+- format / export_format — `excel` yoki `word` (default: excel)
 
 **Header:** Authorization: Token <admin_token>  
 **Ruxsat:** Faqat admin
@@ -793,29 +871,32 @@ Hisobotni Excel (.xlsx) yoki Word (.doc) formatida yuklab olish.
         OpenApiParameter("date_from", OpenApiTypes.DATE, description="Boshlanish sanasi"),
         OpenApiParameter("date_to", OpenApiTypes.DATE, description="Tugash sanasi"),
         OpenApiParameter("format", OpenApiTypes.STR, description="excel | word"),
+        OpenApiParameter("export_format", OpenApiTypes.STR, description="excel | word"),
     ],
     responses={200: OpenApiResponse(description="Fayl yuklanadi")},
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsAdminUser])
+@renderer_classes([ExcelRenderer, WordRenderer, DocxRenderer, XlsxRenderer, JSONRenderer])
 def admin_reports_export(request):
     """Admin: hisobotni Excel/Word formatida eksport qilish"""
     qs = _filter_orders_by_date(Order.objects.select_related("user"), request)
 
-    fmt = request.GET.get("format", "excel")
-    if fmt == "word":
+    fmt = (request.GET.get("export_format") or request.GET.get("format") or "excel").lower()
+    if fmt in ["word", "doc", "docx"]:
         buf = _build_word_export(qs)
         response = HttpResponse(
             buf.read(),
-            content_type="application/msword",
+            content_type="application/msword; charset=utf-8",
         )
-        response["Content-Disposition"] = f'attachment; filename="saramax_hisobot.doc"'
+        response["Content-Disposition"] = 'attachment; filename="saramax_hisobot.doc"'
     else:
-        buf = _build_excel_export(qs, {})
+        buf = _build_excel_export(qs)
         response = HttpResponse(
             buf.read(),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        response["Content-Disposition"] = f'attachment; filename="saramax_hisobot.xlsx"'
+        response["Content-Disposition"] = 'attachment; filename="saramax_hisobot.xlsx"'
 
+    response["Access-Control-Expose-Headers"] = "Content-Disposition"
     return response

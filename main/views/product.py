@@ -1,4 +1,4 @@
-﻿from rest_framework import viewsets, status
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -178,15 +178,21 @@ narx = (base_price + color.price_modifier) × (kenglik_m × balandlik_m)
         calculated = product.calculate_price(width_mm, height_mm, color)
         sqm = (width_mm / 1000) * (height_mm / 1000)
 
+        color_price = color.get_effective_price() if color else float(product.base_price)
+        calc_rounded = round(calculated, 2)
+
         return Response({
             "product": product.name,
             "width_mm": width_mm,
             "height_mm": height_mm,
             "sqm": round(sqm, 4),
             "color": color.name if color else None,
+            "color_id": color.id if color else None,
             "base_price": float(product.base_price),
+            "color_price": color_price,
             "price_modifier": float(color.price_modifier) if color else 0,
             "price_type": product.price_type,
-            "calculated_price": round(calculated, 2),
+            "calculated_price": calc_rounded,
+            "total_price": calc_rounded,
             "currency": "UZS",
         })

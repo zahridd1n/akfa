@@ -247,13 +247,30 @@
           <!-- Info -->
           <div class="p-3">
             <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">{{ product.category_name }}</p>
-            <p class="text-sm font-bold text-slate-900 line-clamp-2 leading-snug mb-3">{{ product.name }}</p>
+            <p class="text-sm font-bold text-slate-900 line-clamp-2 leading-snug mb-1.5">{{ product.name }}</p>
+            <div class="flex items-baseline justify-between mb-2">
+              <span class="text-xs font-bold text-brand-700">
+                {{ formatPrice(product.min_price || product.base_price) }}
+              </span>
+              <span class="text-[10px] text-slate-400 font-medium">/ {{ product.price_type === 'fixed' ? 'dona' : 'm²' }}</span>
+            </div>
+            <!-- Colors dots -->
+            <div v-if="product.colors?.length" class="flex items-center gap-1 mb-2.5">
+              <div
+                v-for="c in product.colors.slice(0, 4)"
+                :key="c.id"
+                class="w-3.5 h-3.5 rounded-full border border-slate-200"
+                :style="{ backgroundColor: c.hex_code }"
+                :title="`${c.name}: ${formatPrice(c.calculated_price ?? c.price ?? product.base_price)}`"
+              />
+              <span v-if="product.colors.length > 4" class="text-[9px] text-slate-400 font-medium">+{{ product.colors.length - 4 }}</span>
+            </div>
             <button
               @click="$router.push(`/product/${product.slug}`)"
-              class="w-full flex items-center justify-center w-8 h-8 rounded-xl border-2 border-[#C7DDEA] hover:border-brand-400 hover:bg-brand-50 transition-colors"
+              class="w-full py-1.5 bg-brand-950 hover:bg-brand-900 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1"
               title="Batafsil"
             >
-              <Plus class="w-4 h-4 text-slate-600" />
+              <span>Batafsil</span>
             </button>
           </div>
         </div>
@@ -381,6 +398,11 @@ function getCategoryData(nameSubstring) {
 
 function scrollToContact() {
   document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
+}
+
+function formatPrice(p) {
+  if (!p && p !== 0) return '—'
+  return new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS', maximumFractionDigits: 0 }).format(p)
 }
 
 async function submitContact() {

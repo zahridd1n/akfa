@@ -1,4 +1,4 @@
-﻿from django.db import models
+from django.db import models
 from django.utils.text import slugify
 
 
@@ -126,11 +126,19 @@ class Product(models.Model):
     def calculate_price(self, width_mm: int, height_mm: int, color=None) -> float:
         """
         Narxni hisoblash:
-        - per_sqm: (base_price + color.price_modifier) * (width_mm/1000) * (height_mm/1000)
-        - fixed: base_price + color.price_modifier
+        - per_sqm: effective_price * (width_mm/1000) * (height_mm/1000)
+        - fixed: effective_price
         """
-        modifier = color.price_modifier if color else 0
-        effective_price = float(self.base_price) + float(modifier)
+        if color:
+            if hasattr(color, "get_effective_price"):
+                effective_price = color.get_effective_price()
+            elif getattr(color, "price", None) is not None:
+                effective_price = float(color.price)
+            else:
+                effective_price = float(self.base_price) + float(getattr(color, "price_modifier", 0) or 0)
+        else:
+            effective_price = float(self.base_price)
+
         if self.price_type == self.PriceType.PER_SQM:
             return effective_price * (width_mm / 1000) * (height_mm / 1000)
         return effective_price
@@ -161,6 +169,15 @@ class ProductColor(models.Model):
     hex_code = models.CharField(
         max_length=7, blank=True, verbose_name="HEX kodi", help_text="#RRGGBB formatida"
     )
+    price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Rang narxi (UZS)",
+        help_text="Ushbu rang uchun to'liq narx. Agar kiritilsa, mahsulot asosiy narxi o'rniga ishlatiladi",
+    )
     price_modifier = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -177,3 +194,26 @@ class ProductColor(models.Model):
 
     def __str__(self):
         return f"{self.product.name} — {self.name}"
+
+    def get_effective_price(self) -> float:
+        """Ushbu rang uchun amaldagi narx (UZS)"""
+        if self.price is not None:
+            return float(self.price)
+        base = float(self.product.base_price) if self.product else 0
+        return base + float(self.price_modifier or 0)
+
+    def save(self, *args, **kwargs):
+        # price va price_modifier o'rtasidagi ikki tomonlama sinxronlik
+        if self.price is not None and self.product_id:
+            try:
+                base = float(self.product.base_price)
+                self.price_modifier = float(self.price) - base
+            except Exception:
+                pass
+        elif self.price is None and self.product_id:
+            try:
+                base = float(self.product.base_price)
+                self.price = base + float(self.price_modifier or 0)
+            except Exception:
+                pass
+        super().save(*args, **kwargs)

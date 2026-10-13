@@ -6,9 +6,19 @@
         <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Dashboard</h1>
         <p class="text-slate-400 text-xs sm:text-sm mt-0.5">Saramax savdo statistikasi va ko'rsatkichlari</p>
       </div>
-      <div class="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 self-start sm:self-auto">
-        <Clock class="w-3.5 h-3.5 text-brand-400" />
-        <span>{{ todayLabel }}</span>
+      <div class="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+        <router-link
+          to="/admin/reports"
+          class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-1.5 rounded-xl shadow-sm transition-colors"
+          id="dashboard-download-report-btn"
+        >
+          <FileDown class="w-4 h-4" />
+          <span>Hisobot yuklab olish</span>
+        </router-link>
+        <div class="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
+          <Clock class="w-3.5 h-3.5 text-brand-400" />
+          <span>{{ todayLabel }}</span>
+        </div>
       </div>
     </div>
 
@@ -244,7 +254,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import { ChevronRight, ShoppingBag, Users, Package, TrendingUp, Clock, AlertTriangle, BarChart3 } from '@lucide/vue'
+import { ChevronRight, ShoppingBag, Users, Package, TrendingUp, Clock, AlertTriangle, BarChart3, FileDown } from '@lucide/vue'
 import { Chart, registerables } from 'chart.js'
 import { adminApi } from '@/api/admin'
 import { useAlertStore } from '@/stores/alert'

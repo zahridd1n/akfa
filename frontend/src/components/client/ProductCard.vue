@@ -30,16 +30,24 @@
         <span>Iqlim: Issiq/Sovuq</span>
       </div>
 
+      <!-- Price -->
+      <div class="mb-3">
+        <p class="text-base font-bold text-slate-900">
+          {{ formatPrice(displayPrice) }}
+          <span class="text-[11px] font-normal text-slate-400">/ {{ product.price_type === 'fixed' ? 'dona' : 'm²' }}</span>
+        </p>
+      </div>
+
       <!-- Colors -->
-      <div v-if="product.colors?.length" class="flex items-center gap-2 mb-6">
+      <div v-if="product.colors?.length" class="flex items-center gap-1.5 mb-5">
         <div
-          v-for="color in product.colors.slice(0, 3)"
+          v-for="color in product.colors.slice(0, 5)"
           :key="color.id"
-          class="w-5 h-5 rounded-full border border-slate-200"
+          class="w-4.5 h-4.5 rounded-full border border-slate-200 shadow-xs cursor-help"
           :style="{ backgroundColor: color.hex_code }"
-          :title="color.name"
+          :title="`${color.name}: ${formatPrice(color.calculated_price ?? color.price ?? (Number(product.base_price) + Number(color.price_modifier || 0)))}`"
         />
-        <span v-if="product.colors.length > 3" class="text-[10px] font-medium text-slate-500 ml-1">+{{ product.colors.length - 3 }}</span>
+        <span v-if="product.colors.length > 5" class="text-[10px] font-medium text-slate-400 ml-1">+{{ product.colors.length - 5 }}</span>
       </div>
 
       <!-- Buttons -->
@@ -47,7 +55,7 @@
         <router-link :to="`/product/${product.slug}`" class="flex-1 btn-md bg-brand-950 hover:bg-brand-900 text-white font-medium text-xs uppercase tracking-wider text-center py-2.5 rounded-lg transition-colors">
           Batafsil
         </router-link>
-        <button class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors">
+        <button @click="goToDetail" class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors" title="Batafsil ko'rish">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
         </button>
       </div>
@@ -67,6 +75,15 @@ function goToDetail() {
 
 const props = defineProps({
   product: { type: Object, required: true }
+})
+
+function formatPrice(p) {
+  if (!p && p !== 0) return '—'
+  return new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS', maximumFractionDigits: 0 }).format(p)
+}
+
+const displayPrice = computed(() => {
+  return props.product.min_price || props.product.base_price || 0
 })
 
 const mainImage = computed(() => {

@@ -72,15 +72,20 @@
                 </div>
               </td>
               <td class="px-4 py-3.5 text-slate-300 whitespace-nowrap">{{ product.category_name }}</td>
-              <td class="px-4 py-3.5 font-semibold text-brand-400 whitespace-nowrap">{{ formatPrice(product.base_price) }}</td>
+              <td class="px-4 py-3.5 whitespace-nowrap">
+                <span class="font-semibold text-brand-400 block">{{ formatPrice(product.base_price) }}</span>
+                <span v-if="product.min_price && product.max_price && product.min_price !== product.max_price" class="text-[11px] text-slate-400 block">
+                  Ranglar: {{ formatPrice(product.min_price) }} - {{ formatPrice(product.max_price) }}
+                </span>
+              </td>
               <td class="px-4 py-3.5 whitespace-nowrap">
                 <div class="flex items-center gap-1.5">
                   <div
                     v-for="color in (product.colors || []).slice(0, 5)"
                     :key="color.id"
-                    class="w-5 h-5 rounded-full border border-slate-600/90 shadow-xs flex-shrink-0"
+                    class="w-5 h-5 rounded-full border border-slate-600/90 shadow-xs flex-shrink-0 cursor-help"
                     :style="{ backgroundColor: color.hex_code }"
-                    :title="color.name"
+                    :title="`${color.name} — ${formatPrice(color.price || color.calculated_price || product.base_price)}`"
                   />
                   <span v-if="(product.colors || []).length > 5" class="text-xs text-slate-400 font-medium">+{{ product.colors.length - 5 }}</span>
                 </div>

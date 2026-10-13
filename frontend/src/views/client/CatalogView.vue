@@ -210,7 +210,13 @@
             <!-- Info -->
             <div class="p-3">
               <p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">{{ product.category_name }}</p>
-              <p class="text-sm font-bold text-slate-900 line-clamp-2 leading-snug mb-3">{{ product.name }}</p>
+              <p class="text-sm font-bold text-slate-900 line-clamp-2 leading-snug mb-1">{{ product.name }}</p>
+              <div class="flex items-baseline justify-between mb-2">
+                <span class="text-xs font-bold text-brand-700">
+                  {{ formatPrice(product.min_price || product.base_price) }}
+                </span>
+                <span class="text-[10px] text-slate-400">/ {{ product.price_type === 'fixed' ? 'dona' : 'm²' }}</span>
+              </div>
               <router-link
                 :to="`/product/${product.slug}`"
                 class="block w-full text-center py-2 bg-brand-950 hover:bg-brand-900 text-white text-xs font-semibold rounded-lg transition-colors"
@@ -428,6 +434,11 @@ function setPage(p) {
   page.value = p
   fetchProducts()
   window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function formatPrice(p) {
+  if (!p && p !== 0) return '—'
+  return new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS', maximumFractionDigits: 0 }).format(p)
 }
 
 onMounted(async () => {

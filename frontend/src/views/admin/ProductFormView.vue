@@ -152,30 +152,78 @@
 
       <!-- Colors -->
       <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-        <h2 class="font-semibold text-white mb-4">Rang Variantlari</h2>
-        <p class="text-slate-400 text-xs mb-4">Har bir rang uchun narx modifikatorini kiriting. 0 = baza narx, musbat = qo'shimcha narx</p>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-semibold text-white">Rang Variantlari va Narxlari</h2>
+          <span class="text-xs text-slate-400">Jami: {{ form.colors.length }} ta rang</span>
+        </div>
+        <p class="text-slate-400 text-xs mb-4">
+          Har bir rang uchun o'z narxini kiriting (masalan: Oq 12 000, Qora 18 000, Kulrang 15 000). Narx kiritilmasa, mahsulotning asosiy narxi ishlatiladi.
+        </p>
 
         <div class="space-y-3 mb-4">
           <div
             v-for="(color, i) in form.colors"
-            :key="i"
-            class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 bg-slate-700/80 rounded-xl p-3 border border-slate-600/60"
+            :key="color.id || i"
+            class="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 bg-slate-700/80 rounded-xl p-3 border border-slate-600/60"
           >
-            <div class="flex items-center gap-2 flex-1 min-w-[140px]">
-              <div class="w-8 h-8 rounded-lg border border-slate-600 flex-shrink-0" :style="{ backgroundColor: color.hex_code || '#888' }" />
-              <input v-model="color.name" type="text" placeholder="Rang nomi" class="form-input bg-slate-600 border-slate-500 text-white text-xs sm:text-sm py-1.5 flex-1" />
+            <!-- Name & Hex swatch -->
+            <div class="flex items-center gap-2 flex-1 min-w-[160px]">
+              <input
+                v-model="color.hex_code"
+                type="color"
+                class="w-9 h-9 rounded-lg cursor-pointer bg-transparent border border-slate-500/80 p-0.5 flex-shrink-0"
+                title="Rang tanlash"
+              />
+              <input
+                v-model="color.name"
+                type="text"
+                placeholder="Rang nomi (masalan: Oq, Qora)"
+                class="form-input bg-slate-600 border-slate-500 text-white text-xs sm:text-sm py-1.5 flex-1"
+              />
             </div>
+
+            <!-- Price input & Delta badge -->
             <div class="flex items-center gap-2 w-full sm:w-auto">
-              <input v-model="color.hex_code" type="color" class="w-9 h-9 rounded-lg cursor-pointer bg-transparent border-0 p-0.5 flex-shrink-0" />
-              <input v-model.number="color.price_modifier" type="number" step="1000" placeholder="Qo'shimcha narx" class="form-input bg-slate-600 border-slate-500 text-white text-xs sm:text-sm py-1.5 flex-1 sm:w-36" />
-              <button type="button" @click="form.colors.splice(i, 1)" class="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-950/30 flex-shrink-0">
+              <div class="relative flex-1 sm:w-44">
+                <input
+                  v-model.number="color.price"
+                  @input="onColorPriceInput(color)"
+                  type="number"
+                  step="1000"
+                  min="0"
+                  placeholder="Rang narxi (so'm)"
+                  class="form-input bg-slate-600 border-slate-500 text-white text-xs sm:text-sm py-1.5 w-full pr-12"
+                />
+                <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-medium">so'm</span>
+              </div>
+
+              <!-- Price diff indicator -->
+              <span
+                class="text-[11px] px-2 py-1 rounded-md font-medium whitespace-nowrap min-w-[70px] text-center"
+                :class="colorDiffClass(color)"
+              >
+                {{ colorDiffLabel(color) }}
+              </span>
+
+              <!-- Delete -->
+              <button
+                type="button"
+                @click="removeColor(i)"
+                class="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-950/30 flex-shrink-0"
+                title="O'chirish"
+              >
                 <X class="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
-        <button type="button" @click="addColor" class="btn-sm btn-outline border-slate-600 text-slate-300 hover:bg-slate-700">
+        <button
+          type="button"
+          @click="addColor"
+          class="btn-sm btn-outline border-slate-600 text-slate-300 hover:bg-slate-700"
+          id="add-color-btn"
+        >
           <Plus class="w-4 h-4" /> Rang qo'shish
         </button>
       </div>
@@ -211,6 +259,7 @@ const submitting = ref(false)
 const existingImages = ref([])
 const uploadFiles = ref([])
 const fileInputRef = ref(null)
+const deletedColorIds = ref([])
 
 const form = ref({
   name: '', description: '', category: '', material: 'aluminium',
@@ -220,7 +269,46 @@ const form = ref({
 })
 
 function addColor() {
-  form.value.colors.push({ name: '', hex_code: '#FFFFFF', price_modifier: 0 })
+  const base = form.value.base_price ? Number(form.value.base_price) : 0
+  form.value.colors.push({
+    name: '',
+    hex_code: '#FFFFFF',
+    price: base || null,
+    price_modifier: 0,
+    is_available: true,
+  })
+}
+
+function removeColor(index) {
+  const color = form.value.colors[index]
+  if (color && color.id) {
+    deletedColorIds.value.push(color.id)
+  }
+  form.value.colors.splice(index, 1)
+}
+
+function onColorPriceInput(color) {
+  if (color.price !== null && color.price !== undefined && form.value.base_price) {
+    color.price_modifier = Number(color.price) - Number(form.value.base_price)
+  }
+}
+
+function colorDiffLabel(color) {
+  const base = Number(form.value.base_price) || 0
+  const p = color.price !== null && color.price !== undefined ? Number(color.price) : (base + Number(color.price_modifier || 0))
+  const diff = p - base
+  if (diff === 0) return 'Baza narx'
+  if (diff > 0) return `+${new Intl.NumberFormat('uz-UZ').format(diff)}`
+  return `${new Intl.NumberFormat('uz-UZ').format(diff)}`
+}
+
+function colorDiffClass(color) {
+  const base = Number(form.value.base_price) || 0
+  const p = color.price !== null && color.price !== undefined ? Number(color.price) : (base + Number(color.price_modifier || 0))
+  const diff = p - base
+  if (diff === 0) return 'bg-slate-600/60 text-slate-300'
+  if (diff > 0) return 'bg-amber-500/20 text-amber-300'
+  return 'bg-emerald-500/20 text-emerald-300'
 }
 
 function handleFileSelect(e) {
@@ -277,10 +365,40 @@ async function submit() {
       savedProduct = res.data
     }
 
-    // Save colors (faqat yangilarini qo'shish, eskilari saqlanib qoladi)
+    // 1. O'chirilgan ranglarni bazadan o'chirish
+    for (const delId of deletedColorIds.value) {
+      try {
+        await adminApi.deleteProductColor(savedProduct.id, delId)
+      } catch (e) {
+        console.error('Delete color failed:', e)
+      }
+    }
+
+    // 2. Yangi va mavjud ranglarni saqlash / yangilash
     for (const color of form.value.colors) {
-      if (!color.id && color.name && color.hex_code) {
-        await adminApi.addProductColor(savedProduct.id, color)
+      if (!color.name) continue
+      const base = Number(form.value.base_price) || 0
+      const colorPrice = color.price !== null && color.price !== undefined
+        ? Number(color.price)
+        : (base + Number(color.price_modifier || 0))
+      const modifier = colorPrice - base
+
+      const payload = {
+        name: color.name,
+        hex_code: color.hex_code || '#FFFFFF',
+        price: colorPrice,
+        price_modifier: modifier,
+        is_available: color.is_available ?? true,
+      }
+
+      try {
+        if (color.id) {
+          await adminApi.updateProductColor(savedProduct.id, color.id, payload)
+        } else {
+          await adminApi.addProductColor(savedProduct.id, payload)
+        }
+      } catch (e) {
+        console.error('Color save error:', e)
       }
     }
 
@@ -312,12 +430,25 @@ onMounted(async () => {
       const productRes = await adminApi.getProduct(route.params.id)
       const p = productRes.data
       existingImages.value = p.images || []
+
+      const loadedColors = (p.colors || []).map(c => {
+        const base = Number(p.base_price) || 0
+        const price = c.price !== null && c.price !== undefined
+          ? Number(c.price)
+          : (c.calculated_price !== undefined ? Number(c.calculated_price) : (base + Number(c.price_modifier || 0)))
+        return {
+          ...c,
+          price,
+          price_modifier: price - base,
+        }
+      })
+
       form.value = {
         name: p.name, description: p.description, category: p.category?.id ?? p.category,
         material: p.material, base_price: p.base_price, badge: p.badge || '',
         design_style: p.design_style, profile_thickness: p.profile_thickness || '',
         max_glass: p.max_glass || '', sound_insulation: p.sound_insulation || '',
-        is_active: p.is_active, colors: p.colors || [],
+        is_active: p.is_active, colors: loadedColors,
       }
     } catch { alertStore.error('Mahsulot topilmadi') }
   }
