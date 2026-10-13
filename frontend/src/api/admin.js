@@ -38,6 +38,9 @@ export const adminApi = {
     return api.get('/admin-panel/reports/export/', {
       params: { ...params, format: fmt, export_format: fmt },
       responseType: 'blob',
+      headers: {
+        Accept: '*/*',
+      },
     })
   },
 

@@ -7,6 +7,7 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer, JSONRenderer
+from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
@@ -606,8 +607,13 @@ def admin_customers_list(request):
 # ─────────────────────────────────────────
 # Hisobotlar
 # ─────────────────────────────────────────
+class IgnoreClientContentNegotiation(BaseContentNegotiation):
+    def select_renderer(self, request, renderers, format_suffix=None):
+        return (renderers[0], renderers[0].media_type)
+
+
 class ExcelRenderer(BaseRenderer):
-    media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    media_type = "*/*"
     format = "excel"
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
@@ -615,7 +621,7 @@ class ExcelRenderer(BaseRenderer):
 
 
 class WordRenderer(BaseRenderer):
-    media_type = "application/msword"
+    media_type = "*/*"
     format = "word"
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
@@ -623,7 +629,7 @@ class WordRenderer(BaseRenderer):
 
 
 class DocxRenderer(BaseRenderer):
-    media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    media_type = "*/*"
     format = "docx"
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
@@ -631,7 +637,7 @@ class DocxRenderer(BaseRenderer):
 
 
 class XlsxRenderer(BaseRenderer):
-    media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    media_type = "*/*"
     format = "xlsx"
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
@@ -900,3 +906,7 @@ def admin_reports_export(request):
 
     response["Access-Control-Expose-Headers"] = "Content-Disposition"
     return response
+
+
+admin_reports_export.cls.content_negotiation_class = IgnoreClientContentNegotiation
+
